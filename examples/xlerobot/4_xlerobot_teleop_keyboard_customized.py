@@ -84,6 +84,23 @@ HEAD_JOINT_MAP = {
     "head_tilt": "head_tilt",
 }
 
+FULL_HOME_POS = {
+    "left_arm_shoulder_pan": 0.0,
+    "left_arm_shoulder_lift": -90.0,
+    "left_arm_elbow_flex": 95.0,
+    "left_arm_wrist_flex": 0.0,
+    "left_arm_wrist_roll": -90.0,
+    "left_arm_gripper": 0.0,
+    "right_arm_shoulder_pan": 0.0,
+    "right_arm_shoulder_lift": -90.0,
+    "right_arm_elbow_flex": 95.0,
+    "right_arm_wrist_flex": 0.0,
+    "right_arm_wrist_roll": -90.0,
+    "right_arm_gripper": 0.0,
+    "head_pan": 0.0,
+    "head_tilt": 0.0,
+}
+
 FULL_START_POS = {
     "left_arm_shoulder_pan": 0.0,
     "left_arm_shoulder_lift": -90.0,
@@ -107,7 +124,7 @@ class SimpleHeadControl:
         self.kp = kp
         self.degree_step = 1
         self.target_positions = {k: FULL_START_POS[v] for k, v in self.joint_map.items()}
-        self.zero_pos = {"head_pan": 0.0, "head_tilt": 0.0}
+        self.home_pos = {"head_pan": 0.0, "head_tilt": 0.0}
 
     def move_to_target_with_ipol(self, robot, target_positions=None, duration=3.0, control_freq=200.0,
         max_vel_per_joint=None, max_acc_per_joint=None, max_dev_per_joint=None):
@@ -120,12 +137,12 @@ class SimpleHeadControl:
         """
         # 0) define target order explicitly via target_positions (canonical order)
         if target_positions is None:
-            target_positions = self.zero_pos.copy()
+            target_positions = self.home_pos.copy()
         
         # 1) Read current joint positions (calibrated if provided)
         obs = robot.bus_right_head.sync_read("Present_Position", robot.head_motors)
 
-        # 2) choose names in the order of zero_positions, filter to those present in obs
+        # 2) choose names in the order of home_positions, filter to those present in obs
         names = [n for n in target_positions if n in obs]
         missing = [n for n in target_positions if n not in obs]
         if missing:
@@ -236,7 +253,7 @@ class SimpleTeleopArm:
         self.target_positions = {k: FULL_START_POS[v] for k, v in self.joint_map.items()}
 
         # Initial joint positions
-        self.zero_pos = {
+        self.home_pos = {
             "shoulder_pan": initial_obs[f"{prefix}_arm_shoulder_pan.pos"],
             "shoulder_lift": initial_obs[f"{prefix}_arm_shoulder_lift.pos"],
             "elbow_flex": initial_obs[f"{prefix}_arm_elbow_flex.pos"],
@@ -294,7 +311,7 @@ class SimpleTeleopArm:
         """
         # 0) define target order explicitly via target_positions (canonical order)
         if target_positions is None:
-            target_positions = self.zero_pos.copy()
+            target_positions = self.home_pos.copy()
         
         # 1) Read current joint positions (calibrated if provided)
         if self.prefix=="left":
@@ -303,7 +320,7 @@ class SimpleTeleopArm:
             obs_raw = robot.bus_right_head.sync_read("Present_Position", robot.right_arm_motors)
         obs = {j: obs_raw[f"{self.joint_map[j]}"] for j in self.joint_map}
 
-        # 2) choose names in the order of zero_positions, filter to those present in obs
+        # 2) choose names in the order of home_positions, filter to those present in obs
         names = [n for n in target_positions if n in obs]
         missing = [n for n in target_positions if n not in obs]
         if missing:
@@ -475,9 +492,9 @@ def move_to_target_full_body_with_ipol(
         """
         # 0) define target order explicitly via target_positions (canonical order)
         if target_positions is None:
-            left_target_pos = {v: left_teleop.zero_pos[k] for k, v in LEFT_JOINT_MAP.items()}
-            right_target_pos = {v: right_teleop.zero_pos[k] for k, v in RIGHT_JOINT_MAP.items()}
-            head_target_pos = {v: head_teleop.zero_pos[k] for k, v in HEAD_JOINT_MAP.items()}
+            left_target_pos = {v: left_teleop.home_pos[k] for k, v in LEFT_JOINT_MAP.items()}
+            right_target_pos = {v: right_teleop.home_pos[k] for k, v in RIGHT_JOINT_MAP.items()}
+            head_target_pos = {v: head_teleop.home_pos[k] for k, v in HEAD_JOINT_MAP.items()}
             target_positions = {**left_target_pos, **right_target_pos, **head_target_pos}
         
         # 1) Read current joint positions
@@ -486,7 +503,7 @@ def move_to_target_full_body_with_ipol(
         obs = {**left_obs, **right_head_obs}
         print(f"current pos: {obs}")
 
-        # 2) choose names in the order of zero_positions, filter to those present in obs
+        # 2) choose names in the order of home_positions, filter to those present in obs
         names = [n for n in target_positions if n in obs]
         missing = [n for n in target_positions if n not in obs]
         if missing:
@@ -615,7 +632,7 @@ def main():
         else:
             print("Please enter y or n")
         
-    # init_rerun(session_name="xlerobot_teleop_v2")
+    init_rerun(session_name="ambient_xlerobot_keyboard_teleop")
 
     #Init the keyboard instance
     keyboard_config = KeyboardTeleopConfig()
@@ -644,18 +661,25 @@ def main():
     move_to_target_full_body_with_ipol(robot, left_arm_teleop, right_arm_teleop, head_teleop, 
                                        target_positions=FULL_START_POS)
     
-    #ARM_RESET = False
     try:
         while True:
             start = time.perf_counter()
 
             pressed_keys = set(keyboard.get_action().keys())
             print(f"[MAIN] Pressed Keys: {pressed_keys}")
-            if '^' in pressed_keys:
-                move_to_target_full_body_with_ipol(robot, left_arm_teleop, right_arm_teleop, head_teleop)
-                continue
 
-            if '°' in pressed_keys:
+            # Move to home pose when stopped
+            if '*' in pressed_keys:
+                print("User ended teleop")
+                break
+            
+            # # Move to init pose
+            # if '^' in pressed_keys:
+            #     move_to_target_full_body_with_ipol(robot, left_arm_teleop, right_arm_teleop, head_teleop)
+            #     continue
+            
+            # Move to start pose
+            if '^' in pressed_keys:
                 move_to_target_full_body_with_ipol(robot, left_arm_teleop, right_arm_teleop, head_teleop, target_positions=FULL_START_POS)
                 continue
 
@@ -666,13 +690,11 @@ def main():
             # Handle reset for left arm
             if left_key_state.get('reset'):
                 left_arm_teleop.move_to_target_with_ipol(robot)
-                #ARM_RESET = True # DEBUG
                 continue  
 
             # Handle reset for right arm
             if right_key_state.get('reset'):
                 right_arm_teleop.move_to_target_with_ipol(robot)
-                #ARM_RESET = True # DEBUG
                 continue
 
             # Handle reset for head motors
@@ -696,13 +718,6 @@ def main():
             base_action = robot._from_keyboard_to_base_action(keyboard_keys) or {}
             print(f"base action: {base_action}")
 
-            # # DEBUG
-            # if ARM_RESET and (any(left_key_state.values()) or any(right_key_state.values())):
-            #     obs = robot.get_observation()
-            #     for k in robot.action_features:
-            #         print(f"[MAIN] Observation : {k}: {obs[k]}")
-            #     break
-
             action = {**left_action, **right_action, **head_action, **base_action}
             robot.send_action(action)
 
@@ -710,12 +725,11 @@ def main():
             #for k in robot.action_features:
             #    print(f"[MAIN] Observation: {k}: {obs[k]}")
 
-            # log_rerun_data(obs, action)
+            log_rerun_data(obs, action)
 
             dt_ms = (time.perf_counter() - start) * 1e3
             print(f"control delay: {dt_ms:.1f}ms")
             busy_wait(max(1.0 / FPS - (time.perf_counter() - start), 0.0))
-            # busy_wait(1.0 / FPS)
     except KeyboardInterrupt:
             print("User interrupted program")
     finally:
