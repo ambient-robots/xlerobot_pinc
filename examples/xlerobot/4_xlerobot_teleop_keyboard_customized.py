@@ -32,7 +32,6 @@ from lerobot.robots.so100_follower.robot_kinematic_processor import (
     ForwardKinematicsJointsToEE,
     InverseKinematicsEEToJoints,
 )
-from lerobot.model.SO101Robot import SO101Kinematics
 from lerobot.teleoperators.keyboard.teleop_keyboard import KeyboardTeleop, KeyboardTeleopConfig
 
 # Keymaps (semantic action: key)
@@ -632,7 +631,7 @@ def main():
         else:
             print("Please enter y or n")
         
-    init_rerun(session_name="ambient_xlerobot_keyboard_teleop")
+    # init_rerun(session_name="ambient_xlerobot_keyboard_teleop")
 
     #Init the keyboard instance
     keyboard_config = KeyboardTeleopConfig()
@@ -725,7 +724,7 @@ def main():
             #for k in robot.action_features:
             #    print(f"[MAIN] Observation: {k}: {obs[k]}")
 
-            log_rerun_data(obs, action)
+            # log_rerun_data(obs, action)
 
             dt_ms = (time.perf_counter() - start) * 1e3
             print(f"control delay: {dt_ms:.1f}ms")
