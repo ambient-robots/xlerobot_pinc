@@ -419,7 +419,7 @@ class XLerobot(Robot):
         angles = np.radians(np.array([240, 0, 120]) - 90)
         # Build the kinematic matrix: each row maps body velocities to a wheel’s linear speed.
         # The third column (base_radius) accounts for the effect of rotation.
-        m = np.array([[np.cos(a), np.sin(a), base_radius] for a in angles])
+        m = np.array([[np.cos(a), -np.sin(a), base_radius] for a in angles])
 
         # Compute each wheel’s linear speed (m/s) and then its angular speed (rad/s).
         wheel_linear_speeds = m.dot(velocity_vector)
@@ -481,7 +481,7 @@ class XLerobot(Robot):
 
         # Define the wheel mounting angles with a -90° offset.
         angles = np.radians(np.array([240, 0, 120]) - 90)
-        m = np.array([[np.cos(a), np.sin(a), base_radius] for a in angles])
+        m = np.array([[np.cos(a), -np.sin(a), base_radius] for a in angles])
 
         # Solve the inverse kinematics: body_velocity = M⁻¹ · wheel_linear_speeds.
         m_inv = np.linalg.inv(m)
