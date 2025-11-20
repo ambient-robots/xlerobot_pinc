@@ -543,7 +543,7 @@ class RealSenseCamera(Camera):
         
         while time.monotonic() < deadline:
             # short wait to avoid long blocking; event stays set between frames (that’s fine)
-            self.new_frame_event.wait(0.005)
+            self.new_frame_event.wait(0.002)
             with self.frame_lock:
                 frame = self.latest_frame
             if frame is not None:
