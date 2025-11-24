@@ -32,7 +32,8 @@ DEFAULT_CONFIG = {
             "port": "/dev/ttyACM1",
             "enabled": True
         },
-        "vr_to_robot_scale": 1.0,
+        "vr_to_robot_pos_scale": 1.0,
+        "vr_to_robot_ori_scale": 1.0,
         "send_interval": 0.05,
     },
     "control": {
@@ -91,7 +92,8 @@ HOST_IP = _config_data["network"]["host_ip"]
 CERTFILE = _config_data["ssl"]["certfile"]
 KEYFILE = _config_data["ssl"]["keyfile"]
 
-VR_TO_ROBOT_SCALE = _config_data["robot"]["vr_to_robot_scale"]
+VR_TO_ROBOT_POS_SCALE = _config_data["robot"]["vr_to_robot_pos_scale"]
+VR_TO_ROBOT_ORI_SCALE = _config_data["robot"]["vr_to_robot_ori_scale"]
 SEND_INTERVAL = _config_data["robot"]["send_interval"]
 
 POS_STEP = _config_data["control"]["keyboard"]["pos_step"]
@@ -120,7 +122,8 @@ class XLeVRConfig:
     enable_keyboard: bool = False
     enable_https: bool = True
     log_level: str = "warning"
-    vr_to_robot_scale: float = VR_TO_ROBOT_SCALE
+    vr_to_robot_pos_scale: float = VR_TO_ROBOT_POS_SCALE
+    vr_to_robot_ori_scale: float = VR_TO_ROBOT_ORI_SCALE
     # Optionally, webapp_dir if used elsewhere
     webapp_dir: str = "webapp"
     def __post_init__(self):

@@ -491,11 +491,8 @@ AFRAME.registerComponent('controller-updater', {
                 };
                 // 侧边按钮
                 leftController.buttons = {
-                    a: !!leftGamepad.buttons[3]?.pressed,
-                    b: !!leftGamepad.buttons[4]?.pressed,
-                    squeeze: !!leftGamepad.buttons[1]?.pressed,
-                    thumbstick: !!leftGamepad.buttons[2]?.pressed,
-                    menu: !!leftGamepad.buttons[6]?.pressed
+                    X: !!leftGamepad.buttons[4]?.pressed,
+                    Y: !!leftGamepad.buttons[5]?.pressed,
                 };
             }
         }
@@ -568,11 +565,8 @@ AFRAME.registerComponent('controller-updater', {
                 };
                 // 侧边按钮
                 rightController.buttons = {
-                    a: !!rightGamepad.buttons[3]?.pressed,
-                    b: !!rightGamepad.buttons[4]?.pressed,
-                    squeeze: !!rightGamepad.buttons[1]?.pressed,
-                    thumbstick: !!rightGamepad.buttons[2]?.pressed,
-                    menu: !!rightGamepad.buttons[6]?.pressed
+                    A: !!rightGamepad.buttons[4]?.pressed,
+                    B: !!rightGamepad.buttons[5]?.pressed,
                 };
             }
         }

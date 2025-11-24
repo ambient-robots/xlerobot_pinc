@@ -8,21 +8,25 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Optional, Literal, Dict, Any
 from enum import Enum
+from scipy.spatial.transform import Rotation
 
 class ControlMode(Enum):
     """Control modes for the teleoperation system."""
     POSITION_CONTROL = "position"
     IDLE = "idle"
+    RESET = "reset"
 
 @dataclass
 class ControlGoal:
     """High-level control goal message sent from input providers."""
     arm: Literal["left", "right"]
-    mode: Optional[ControlMode] = None            # Control mode (None = no mode change)
-    target_position: Optional[np.ndarray] = None  # 3D position in robot coordinates
-    wrist_roll_deg: Optional[float] = None        # Wrist roll angle in degrees
-    wrist_flex_deg: Optional[float] = None        # Wrist flex (pitch) angle in degrees
-    gripper_closed: Optional[bool] = None         # Gripper state (None = no change)
+    mode: Optional[ControlMode] = None             # control mode (None = no mode change)
+    relative_position: Optional[np.ndarray] = None # 3D relative position change in vr coordinates
+    relative_rotvec: Optional[np.ndarray] = None   # 3D relative rotvec change in vr coordinates
+    trigger: Optional[bool] = None                 # trigger status
+    thumbstick: Optional[Dict[str, Any]] = None    # thumbstick info
+    buttons: Optional[Dict[str, Any]] = None       # buttons info
+    vr_ctrl_rotation: Optional[Rotation] = None    # vr ctrl original rotation when grip pressed
     
     # Additional data for debugging/monitoring
     metadata: Optional[Dict[str, Any]] = None

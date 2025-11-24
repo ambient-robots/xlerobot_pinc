@@ -15,9 +15,10 @@ import ssl
 import socket
 from pathlib import Path
 from typing import Optional
+from collections import deque
 
 # Set the absolute path to the xlevr folder
-XLEVR_PATH = "/home/that/lerobot/XLeVR"
+XLEVR_PATH = "/home/that/lerobot/examples/xlerobot/XLeVR"
 
 def setup_xlevr_environment():
     """Setup xlevr environment"""
@@ -175,6 +176,13 @@ class VRMonitor:
         self.right_goal = None
         self.headset_goal = None  # Add headset goal
         self._goal_lock = threading.Lock()  # Add thread lock
+
+        # per-arm goal queues
+        self._goal_queues = {
+            "left": deque(),
+            "right": deque(),
+            "headset": deque(),
+        }
     
     def initialize(self):
         """Initialize VR monitor"""
@@ -265,9 +273,15 @@ class VRMonitor:
             try:
                 # Wait for command with 1-second timeout
                 goal = await asyncio.wait_for(self.command_queue.get(), timeout=1.0)
+                # self.print_control_goal(goal)
                 
                 # Save goal by arm type
                 with self._goal_lock:
+
+                    # Put goal into the per-arm queue
+                    if goal.arm in self._goal_queues:
+                        self._goal_queues[goal.arm].append(goal)
+
                     if goal.arm == "left":
                         self.left_goal = goal
                     elif goal.arm == "right":
@@ -286,6 +300,46 @@ class VRMonitor:
                 import traceback
                 print(f"Traceback: {traceback.format_exc()}")
     
+    def pop_ordered_goals_for_arm(self, arm: str):
+        """
+        Drain all pending goals for the given arm and return a tuple:
+            (reset_goal, motion_goal)
+
+        - If any RESET goals are present, the *last* one is returned as reset_goal.
+        - For motion, we return the *last* POSITION_CONTROL or IDLE goal.
+        - If no goals are pending, both are None.
+
+        The idea: you call this once per control cycle, then:
+            1) If reset_goal is not None -> handle RESET (calibration)
+            2) If motion_goal is not None -> handle motion (POSITION_CONTROL / IDLE)
+        """
+
+        reset_goal = None
+        motion_goal = None
+
+        if arm not in self._goal_queues:
+            return None, None
+
+        with self._goal_lock:
+            q = self._goal_queues[arm]
+            if not q:
+                return None, None
+
+            while q:
+                goal = q.popleft()
+                mode_val = getattr(goal.mode, "value", goal.mode)
+                print(f"[QUEUE] got {arm} goal mode={mode_val}, source={goal.metadata.get('source') if goal.metadata else None}")
+
+                if mode_val == "reset":  # ControlMode.RESET.value
+                    # keep the last RESET in this batch
+                    reset_goal = goal
+                elif mode_val in ("position", "idle"):
+                    # keep only the last motion-related goal
+                    motion_goal = goal
+
+        return reset_goal, motion_goal
+
+    
     def print_control_goal(self, goal):
         """Print control goal information"""
         print(f"\n🎮 Control Goal Received:")
@@ -293,22 +347,18 @@ class VRMonitor:
         print(f"   Arm: {goal.arm}")
         print(f"   Mode: {goal.mode}")
         
-        if goal.target_position is not None:
-            if isinstance(goal.target_position, (list, tuple)):
-                pos = goal.target_position
-                print(f"   Target Position: [{pos[0]:.3f}, {pos[1]:.3f}, {pos[2]:.3f}]")
-            else:
-                print(f"   Target Position: {goal.target_position}")
-        
-        if goal.wrist_roll_deg is not None:
-            print(f"   Wrist Roll: {goal.wrist_roll_deg:.1f}°")
-        
-        if goal.wrist_flex_deg is not None:
-            print(f"   Wrist Flex: {goal.wrist_flex_deg:.1f}°")
-        
-        if goal.gripper_closed is not None:
-            print(f"   Gripper: {'CLOSED' if goal.gripper_closed else 'OPEN'}")
-        
+        if goal.relative_position is not None:
+            print(f"   Relative Position: {goal.relative_position}")
+        if goal.relative_rotvec is not None:
+            print(f"   Relative Rotvec: {goal.relative_rotvec}")
+        if goal.vr_ctrl_rotation is not None:
+            print(f"   VR Frame: {goal.vr_ctrl_rotation}")
+        if goal.trigger is not None:
+            print(f"   Trigger: {goal.trigger}")
+        if goal.thumbstick is not None:
+            print(f"   Thumbstick: x={goal.thumbstick['x']:.2f}, y={goal.thumbstick['y']:.2f}")
+        if goal.buttons is not None:
+            print(f"   Buttons: {goal.buttons}")
         if goal.metadata:
             print(f"   Metadata: {goal.metadata}")
         
