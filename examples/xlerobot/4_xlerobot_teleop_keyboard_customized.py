@@ -114,14 +114,14 @@ FULL_START_POS = {
     "right_arm_wrist_roll": -90.0,
     "right_arm_gripper": 50.0,
     "head_pan": 0.0,
-    "head_tilt": 45.0,
+    "head_tilt": 25.0,
 }
 
 class SimpleHeadControl:
     def __init__(self, joint_map, kp=0.5):
         self.joint_map = joint_map
         self.kp = kp
-        self.degree_step = 1
+        self.degree_step = 0.4
         self.target_positions = {k: FULL_START_POS[v] for k, v in self.joint_map.items()}
         self.home_pos = {"head_pan": 0.0, "head_tilt": 0.0}
 
@@ -277,7 +277,7 @@ class SimpleTeleopArm:
                 ),
                 EEBoundsAndSafety(
                     end_effector_bounds={"min": [-0.5, -0.5, -0.5], "max": [0.5, 0.5, 0.5]},
-                    max_ee_step_m=0.03,
+                    max_ee_step_m=0.04,
                 ),
                 GripperVelocityToJoint(
                     speed_factor=10.0,
@@ -294,9 +294,9 @@ class SimpleTeleopArm:
         )
         self.ref_action_when_disabled = None
     
-        # Set the degree step and pos step in [m]
-        self.degree_step = 0.01
-        self.pos_step = 0.003
+        # Set the rad step and pos step in [m]
+        self.rad_step = 1 * (np.pi/180)
+        self.pos_step = 0.0025
         self.gripper_vel_step = 1
 
     def move_to_target_with_ipol(self, robot, target_positions=None, duration=3.0, control_freq=200.0,
@@ -430,17 +430,17 @@ class SimpleTeleopArm:
         elif key_state.get('z-'):
             target_action["target_z"] = -self.pos_step
         elif key_state.get('wx+'):
-            target_action["target_wx"] = self.degree_step
+            target_action["target_wx"] = self.rad_step
         elif key_state.get('wx-'):
-            target_action["target_wx"] = -self.degree_step
+            target_action["target_wx"] = -self.rad_step
         elif key_state.get('wy+'):
-            target_action["target_wy"] = self.degree_step
+            target_action["target_wy"] = self.rad_step
         elif key_state.get('wy-'):
-            target_action["target_wy"] = -self.degree_step
+            target_action["target_wy"] = -self.rad_step
         elif key_state.get('wz+'):
-            target_action["target_wz"] = self.degree_step
+            target_action["target_wz"] = self.rad_step
         elif key_state.get('wz-'):
-            target_action["target_wz"] = -self.degree_step
+            target_action["target_wz"] = -self.rad_step
         elif key_state.get('gripper+'):
             target_action["gripper_vel"] = self.gripper_vel_step
         elif key_state.get('gripper-'):
@@ -591,7 +591,7 @@ def move_to_target_full_body_with_ipol(
 
 def main():
     # Teleop parameters
-    FPS = 50
+    FPS = 100
     # ip = "192.168.1.123"  # This is for zmq connection
     ip = "localhost"  # This is for local/wired connection
     robot_name = "ambient_xlerobot"
@@ -631,7 +631,7 @@ def main():
         else:
             print("Please enter y or n")
         
-    # init_rerun(session_name="ambient_xlerobot_keyboard_teleop")
+    init_rerun(session_name="ambient_xlerobot_keyboard_teleop")
 
     #Init the keyboard instance
     keyboard_config = KeyboardTeleopConfig()
@@ -643,19 +643,6 @@ def main():
     left_arm_teleop = SimpleTeleopArm(LEFT_JOINT_MAP, obs, prefix="left")
     right_arm_teleop = SimpleTeleopArm(RIGHT_JOINT_MAP, obs, prefix="right")
     head_teleop = SimpleHeadControl(HEAD_JOINT_MAP)
-
-    # Move both arms and head to zero position at start
-    # left_arm_target_positions = {
-    #     "shoulder_pan": 0.0,
-    #     "shoulder_lift": 0.0,
-    #     "elbow_flex": 0.0,
-    #     "wrist_flex": 0.0,
-    #     "wrist_roll": -90.0,
-    #     "gripper": 0.0,
-    # }
-    # right_arm_target_positions = left_arm_target_positions.copy()
-    # left_arm_teleop.move_to_target_with_ipol(robot, target_positions=left_arm_target_positions)
-    # right_arm_teleop.move_to_target_with_ipol(robot, target_positions=right_arm_target_positions)
 
     move_to_target_full_body_with_ipol(robot, left_arm_teleop, right_arm_teleop, head_teleop, 
                                        target_positions=FULL_START_POS)
@@ -721,10 +708,10 @@ def main():
             robot.send_action(action)
 
             obs = robot.get_observation()
-            #for k in robot.action_features:
-            #    print(f"[MAIN] Observation: {k}: {obs[k]}")
+            for k in robot.action_features:
+                print(f"[MAIN] Observation: {k}: {obs[k]}")
 
-            # log_rerun_data(obs, action)
+            log_rerun_data(obs, action)
 
             dt_ms = (time.perf_counter() - start) * 1e3
             print(f"control delay: {dt_ms:.1f}ms")
