@@ -53,15 +53,15 @@ def xlerobot_cameras_config() -> dict[str, CameraConfig]:
             use_depth=False
         ),
 
-        "rear": RealSenseCameraConfig(
-            serial_number_or_name="308222301716",  # Replace with camera SN
-            fps=30,
-            width=640,
-            height=480,
-            color_mode=ColorMode.BGR, # Request BGR output
-            rotation=Cv2Rotation.NO_ROTATION,
-            use_depth=False
-        ),
+        # "rear": RealSenseCameraConfig(
+        #     serial_number_or_name="308222301716",  # Replace with camera SN
+        #     fps=30,
+        #     width=640,
+        #     height=480,
+        #     color_mode=ColorMode.BGR, # Request BGR output
+        #     rotation=Cv2Rotation.NO_ROTATION,
+        #     use_depth=False
+        # ),
  
     }
 

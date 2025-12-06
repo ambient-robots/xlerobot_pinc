@@ -23,7 +23,7 @@ from lerobot.datasets.lerobot_dataset import LeRobotDataset
 from XLeVR.vr_monitor import VRMonitor
 from XLeVR.xlevr.inputs.base import ControlGoal, ControlMode
 from lerobot.robots.xlerobot import XLerobotConfig, XLerobot
-from lerobot.utils.robot_utils import busy_wait
+from lerobot.utils.robot_utils import precise_sleep
 from lerobot.model.kinematics import RobotKinematics
 from lerobot.processor import RobotAction, RobotObservation, RobotProcessorPipeline
 from lerobot.processor.converters import (
@@ -39,6 +39,7 @@ from lerobot.robots.so100_follower.robot_kinematic_processor import (
     InverseKinematicsEEToJoints,
 )
 from lerobot.utils.quadratic_spline_via_ipol import Via, Limits, QuadraticSplineInterpolator
+from lerobot.utils.visualization_utils import log_rerun_data, init_rerun
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -73,13 +74,13 @@ FULL_START_POS = {
     "left_arm_shoulder_lift": -90.0,
     "left_arm_elbow_flex": 45.0,
     "left_arm_wrist_flex": 45.0,
-    "left_arm_wrist_roll": -90.0,
+    "left_arm_wrist_roll": 0.0,
     "left_arm_gripper": 50.0,
     "right_arm_shoulder_pan": 0.0,
     "right_arm_shoulder_lift": -90.0,
     "right_arm_elbow_flex": 45.0,
     "right_arm_wrist_flex": 45.0,
-    "right_arm_wrist_roll": -90.0,
+    "right_arm_wrist_roll": 0.0,
     "right_arm_gripper": 50.0,
     "head_pan": 0.0,
     "head_tilt": 25.0,
@@ -90,6 +91,7 @@ FULL_START_POS = {
 # Re-enable by setting to True.
 ENABLE_LEFT_HAND = True
 ENABLE_HEAD = True
+ENABLE_BASE = False
 
 EPISODE_LEN = 450  # Number of steps per episode
 RESET_LEN = 150
@@ -146,7 +148,8 @@ class SimpleTeleopArm:
                     max_ee_step_m=0.03,
                 ),
                 GripperVelocityToJoint(
-                    speed_factor=10.0,
+                    speed_factor=5.0,
+                    clip_max=50,
                 ),
                 InverseKinematicsEEToJoints(
                     kinematics=self.kinematics,
@@ -462,12 +465,12 @@ class SimpleHeadControl:
         if thumb is not None:
             thumb_x = thumb.get('x', 0)
             thumb_y = thumb.get('y', 0)
-            if abs(thumb_x) > 0.25:
+            if abs(thumb_x) > 0.5:
                 if thumb_x > 0:
                     self.target_positions["head_pan"] += self.degree_step
                 else:
                     self.target_positions["head_pan"] -= self.degree_step
-            if abs(thumb_y) > 0.25:
+            if abs(thumb_y) > 0.5:
                 if thumb_y > 0:
                     self.target_positions["head_tilt"] += self.degree_step
                 else:
@@ -711,12 +714,12 @@ def get_vr_base_action(robot, vr_goal):
     if thumb is not None:
         thumb_x = thumb.get('x', 0)
         thumb_y = thumb.get('y', 0)
-        if abs(thumb_x) > 0.25:
+        if abs(thumb_x) > 0.5:
             if thumb_x > 0:
                 pressed_keys.add('6')  # Move right
             else:
                 pressed_keys.add('4')  # Move left
-        if abs(thumb_y) > 0.25:
+        if abs(thumb_y) > 0.5:
             if thumb_y > 0:
                 pressed_keys.add('2')  # Move backward
             else:
@@ -926,6 +929,8 @@ def main():
         # #camera_right.connect()
         # camera_left.connect()
 
+        #init_rerun(session_name="ambient_xlerobot_vr_teleop")
+
         print("Starting VR control loop.")
         # frame_queue = queue.Queue()
         # thread_args = (frame_queue, shutdown_event, saving_in_progress_event)
@@ -1017,8 +1022,11 @@ def main():
 
             # ---- 6) Base control from LEFT controller ----
             # Use the latest left goal (motion preferred, else reset)
-            base_source_goal = left_motion or left_reset
-            base_action = get_vr_base_action(robot, base_source_goal)
+            if ENABLE_BASE:
+                base_source_goal = left_motion or left_reset
+                base_action = get_vr_base_action(robot, base_source_goal)
+            else:
+                base_action = {}
             #print(f"base action: {base_action}")           
 
             # Merge all actions
@@ -1046,9 +1054,11 @@ def main():
             # }
             # frame_queue.put(lerobot_frame)
 
+            #log_rerun_data(obs, action)
+
             dt_ms = (time.perf_counter() - start) * 1e3
             # print(f"control delay: {dt_ms:.1f}ms")
-            busy_wait(max(1.0 / FPS - (time.perf_counter() - start), 0.0))
+            precise_sleep(max(1.0 / FPS - (time.perf_counter() - start), 0.0))
         
     except Exception as e:
         print(f"Program execution failed: {e}")
