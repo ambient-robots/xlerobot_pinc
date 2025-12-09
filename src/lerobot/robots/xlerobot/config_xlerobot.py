@@ -48,7 +48,7 @@ def xlerobot_cameras_config() -> dict[str, CameraConfig]:
             fps=30,
             width=640,
             height=480,
-            color_mode=ColorMode.BGR, # Request BGR output
+            color_mode=ColorMode.RGB,
             rotation=Cv2Rotation.NO_ROTATION,
             use_depth=False
         ),
@@ -58,7 +58,7 @@ def xlerobot_cameras_config() -> dict[str, CameraConfig]:
         #     fps=30,
         #     width=640,
         #     height=480,
-        #     color_mode=ColorMode.BGR, # Request BGR output
+        #     color_mode=ColorMode.RGB,
         #     rotation=Cv2Rotation.NO_ROTATION,
         #     use_depth=False
         # ),
