@@ -35,7 +35,7 @@ from lerobot.robots.so100_follower.robot_kinematic_processor import (
     EEReferenceAndDelta,
     EEBoundsAndSafety,
     GripperVelocityToJoint,
-    ForwardKinematicsJointsToEE,
+    GripperVelocityToJointDeg,
     InverseKinematicsEEToJoints,
 )
 from lerobot.utils.quadratic_spline_via_ipol import Via, Limits, QuadraticSplineInterpolator
@@ -81,10 +81,10 @@ FULL_START_POS = {
     "right_arm_gripper": 50.0,
 }
 
-TASK_DESCRIPTION = "Put the pieces on the table into the wooden box and close the lid"
-HF_REPO_ID = "xuweiwu/record-test"
+TASK_DESCRIPTION = "Put the pieces on the table into the box and close the lid"
+HF_REPO_ID = "xuweiwu/bimanual-toy-box-cleanup"
 FPS = 60
-NUM_EPISODES = 100
+NUM_EPISODES = 50
 EPISODE_TIME_SEC = 120
 
 class SimpleTeleopArm:
@@ -149,7 +149,7 @@ class SimpleTeleopArm:
         
         # Delta control state variables for VR input
         self.vr_relative_position_scaling = 1.2
-        self.gripper_vel_step = 1.0
+        self.gripper_vel_step = 1.2
 
         self.vr_calibrated = False
         self.vr_headset_to_base = Rotation.from_matrix(np.array([[0, 0, -1], [-1, 0, 0], [0, 1, 0]], dtype=float))
@@ -600,8 +600,8 @@ def init_dataset(robot):
         fps=FPS,
         features=dataset_features,
         robot_type=robot.name,
-        image_writer_processes=3,
-        image_writer_threads=4,
+        image_writer_processes=10,
+        image_writer_threads=5,
     )
     
     return dataset
@@ -622,18 +622,19 @@ def main():
         robot_config = XLerobotConfig(id=robot_name, use_degrees=True)
         robot = XLerobot(robot_config)
         robot.connect()
-        print(f"[MAIN] Successfully connected to robot")
+        print(f"[INIT] Successfully connected to robot")
         if robot.is_calibrated:
-            print(f"[MAIN] Robot is calibrated and ready to use!")
-            print(f"[MAIN] Motor bus_left_base info: {robot.bus_left_base.motors}")
-            print(f"[MAIN] Motor bus_right_head info: {robot.bus_right_head.motors}")
+            print(f"[INIT] Robot is calibrated and ready to use!")
+            print(f"[INIT] Motor bus_left_base info: {robot.bus_left_base.motors}")
+            print(f"[INIT] Motor bus_right_head info: {robot.bus_right_head.motors}")
         else:
-            print(f"[MAIN] Robot requires calibration")
+            print(f"[INIT] Robot requires calibration")
 
     except Exception as e:
-        print(f"[MAIN] Failed to connect to robot: {e}")
-        print(f"[MAIN] Robot config: {robot_config}")
-        print(f"[MAIN] Robot: {robot}")
+        print(f"[INIT] Failed to connect to robot: {e}")
+        print(f"[INIT] Robot config: {robot_config}")
+        print(f"[INIT] Robot: {robot}")
+        traceback.print_exc()
         return
     
     try:
@@ -648,7 +649,8 @@ def main():
             "reset_position": False,   # Left controller down: Reset robot
         }
     except Exception as e:
-        print(f"[MAIN] Failed to initialize dataset: {e}")
+        print(f"[INIT] Failed to initialize dataset: {e}")
+        traceback.print_exc()
         return
 
     try:
@@ -682,7 +684,8 @@ def main():
             start_episode_t = None
             episode_started = False
             timestamp = 0
-            print(f"current episode: {recorded_episodes}")
+            vr_monitor.reset_goal_queues()
+            print(f"✅ Start episode: {recorded_episodes}")
             
             while timestamp < EPISODE_TIME_SEC:
                 start_loop_t = time.perf_counter()
@@ -727,15 +730,18 @@ def main():
                     if g and getattr(g, "buttons", None):
                         if g.buttons.get("B", 0):
                             events["exit_early"] = True
+                            print("🔧 Exit early requested")
                         if g.buttons.get("A", 0):
                             events["rerecord_episode"] = True
                             events["exit_early"] = True
+                            print("🔧 Rerecord requested")
 
                 for g in (left_motion, left_reset):
                     if g and getattr(g, "buttons", None):
                         if g.buttons.get("X", 0):
                             events["stop_recording"] = True
                             events["exit_early"] = True
+                            print("🔧 Stop recording requested")
 
                 camera_obs = robot.get_camera_observation()
 
@@ -774,8 +780,6 @@ def main():
                     log_rerun_data(observation=obs, action=action)
                 
                 dt_s = time.perf_counter() - start_loop_t
-                dt_ms = dt_s *1e3
-                print(f"control delay: {dt_ms:.1f}ms")
                 precise_sleep(1 / FPS - dt_s)
                 timestamp = time.perf_counter() - start_episode_t
 
@@ -783,6 +787,7 @@ def main():
             if not events["stop_recording"] and (
             (recorded_episodes < NUM_EPISODES - 1) or events["rerecord_episode"]
             ):
+                print(f"✅ Reset environment after episode: {recorded_episodes}")
                 joint_ipol.plan_to_target(robot, left_arm_teleop, right_arm_teleop, ctrl_freq=FPS, target_positions=FULL_START_POS)                
                 while joint_ipol.ipol_step < joint_ipol.num_via_points:
                     start_loop_t = time.perf_counter()
@@ -801,8 +806,6 @@ def main():
                         dataset.add_frame(frame)
 
                     dt_s = time.perf_counter() - start_loop_t
-                    dt_ms = dt_s *1e3
-                    print(f"control delay: {dt_ms:.1f}ms")
                     precise_sleep(1 / FPS - dt_s)
                 
                 joint_ipol.reset_ipol(left_arm_teleop, right_arm_teleop)
@@ -814,6 +817,7 @@ def main():
                 continue
 
             dataset.save_episode()
+            print(f"🚀 Saved episode: {recorded_episodes}")
             recorded_episodes += 1
         
     except Exception as e:
@@ -829,7 +833,10 @@ def main():
         
         if dataset:
             dataset.finalize()
+            print(f"Collected Dataset: {dataset.meta.total_episodes} episodes, {dataset.meta.total_frames} frames")
+            print(f"Features: {list(dataset.meta.features.keys())}")
             #dataset.push_to_hub()
+            print(f"🚀 Finished dataset collection")
 
 if __name__ == "__main__":
     main()
