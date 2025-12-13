@@ -458,8 +458,26 @@ AFRAME.registerComponent('controller-updater', {
           console.log('Left Z-axis rotation:', this.leftZAxisRotation.toFixed(1), 'degrees');
         }
 
+        // Get gamepad data via A-Frame tracked-controls for left hand
+        let leftGamepadInfo = '';
+        const leftGamepad = this.leftHand.components?.['tracked-controls']?.controller?.gamepad;
+        if (leftGamepad) {
+            // Format each button with pressed, touched, value
+            const buttonLines = leftGamepad.buttons.map((btn, i) =>
+                `btn ${i}: p:${btn.pressed ? 1 : 0} t:${btn.touched ? 1 : 0} v:${btn.value.toFixed(2)}`
+            ).join('\\n');
+
+            // Format axes
+            const axesInfo = leftGamepad.axes.map((axis, i) =>
+                `axis ${i}: ${axis.toFixed(2)}`
+            ).join('\\n');
+
+            leftGamepadInfo = `${buttonLines}\\n${axesInfo}`;
+        }
+
         // Create display text including relative rotation when grip is held
-        let combinedLeftText = `Pos: ${leftPos.x.toFixed(2)} ${leftPos.y.toFixed(2)} ${leftPos.z.toFixed(2)}\\nRot: ${leftRotX.toFixed(0)} ${leftRotY.toFixed(0)} ${leftRotZ.toFixed(0)}`;
+        let combinedLeftText = `Pos: ${leftPos.x.toFixed(2)} ${leftPos.y.toFixed(2)} ${leftPos.z.toFixed(2)}\\nRot: ${leftRotX.toFixed(0)} ${leftRotY.toFixed(0)} ${leftRotZ.toFixed(0)}\\n${leftGamepadInfo}`;
+        // Access button 0 values: leftGamepad.buttons[0].pressed, leftGamepad.buttons[0].touched, leftGamepad.buttons[0].value
         if (this.leftGripDown && this.leftGripInitialRotation) {
           combinedLeftText += `\\nZ-Rot: ${this.leftZAxisRotation.toFixed(1)}°`;
         }
@@ -531,9 +549,27 @@ AFRAME.registerComponent('controller-updater', {
           console.log('Right relative rotation:', this.rightRelativeRotation);
           console.log('Right Z-axis rotation:', this.rightZAxisRotation.toFixed(1), 'degrees');
         }
+        // Get gamepad data via A-Frame tracked-controls
+        let gamepadInfo = '';
+        const rightGamepad = this.rightHand.components?.['tracked-controls']?.controller?.gamepad;
+        if (rightGamepad) {
+            // Format each button with pressed, touched, value
+            const buttonLines = rightGamepad.buttons.map((btn, i) =>
+                `btn ${i}: p:${btn.pressed ? 1 : 0} t:${btn.touched ? 1 : 0} v:${btn.value.toFixed(2)}`
+            ).join('\\n');
+
+            // Format axes
+            const axesInfo = rightGamepad.axes.map((axis, i) =>
+                `axis ${i}: ${axis.toFixed(2)}`
+            ).join('\\n');
+
+            gamepadInfo = `${buttonLines}\\n${axesInfo}`;
+        }
 
         // Create display text including relative rotation when grip is held
-        let combinedRightText = `Pos: ${rightPos.x.toFixed(2)} ${rightPos.y.toFixed(2)} ${rightPos.z.toFixed(2)}\\nRot: ${rightRotX.toFixed(0)} ${rightRotY.toFixed(0)} ${rightRotZ.toFixed(0)}`;
+        let combinedRightText = `Pos: ${rightPos.x.toFixed(2)} ${rightPos.y.toFixed(2)} ${rightPos.z.toFixed(2)}\\nRot:  ${rightRotX.toFixed(0)} ${rightRotY.toFixed(0)} ${rightRotZ.toFixed(0)}\\n${gamepadInfo}`;
+        // Access button 0 values: rightGamepad.buttons[0].pressed, rightGamepad.buttons[0].touched, rightGamepad.buttons[0].value
+
         if (this.rightGripDown && this.rightGripInitialRotation) {
           combinedRightText += `\\nZ-Rot: ${this.rightZAxisRotation.toFixed(1)}°`;
         }
