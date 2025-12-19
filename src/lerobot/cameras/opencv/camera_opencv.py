@@ -129,8 +129,7 @@ class OpenCVCamera(Camera):
         self.backend: int = get_cv2_backend()
 
         self.latest_seq: int = -1
-        self.latest_ts: float = 0.0
-        self._last_seen_seq: int = -1   # tracks what the consumer last returned
+        self._last_seen_seq: int = -1
 
         if self.height and self.width:
             self.capture_width, self.capture_height = self.width, self.height
@@ -435,7 +434,7 @@ class OpenCVCamera(Camera):
 
         On each iteration:
         1. Reads a color frame
-        2. Stores result in latest_frame (thread-safe)
+        2. Stores result in latest_frame and increments latest_seq (thread-safe)
         3. Sets new_frame_event to notify listeners
 
         Stops on DeviceNotConnectedError, logs other errors and continues.
@@ -446,11 +445,9 @@ class OpenCVCamera(Camera):
         while not self.stop_event.is_set():
             try:
                 color_image = self.read()
-                now = time.monotonic()
 
                 with self.frame_lock:
                     self.latest_frame = color_image
-                    self.latest_ts = now
                     self.latest_seq = (self.latest_seq + 1) & 0xFFFFFFFF
                 self.new_frame_event.set()
 
@@ -461,12 +458,14 @@ class OpenCVCamera(Camera):
 
     def _start_read_thread(self) -> None:
         """Starts or restarts the background read thread if it's not running."""
-        if self.thread is not None and self.thread.is_alive():
-            self.thread.join(timeout=0.1)
         if self.stop_event is not None:
             self.stop_event.set()
+        if self.thread is not None and self.thread.is_alive():
+            self.thread.join(timeout=0.1)
 
         self.stop_event = Event()
+        self.new_frame_event = Event()
+
         self.thread = Thread(target=self._read_loop, args=(), name=f"{self}_read_loop")
         self.thread.daemon = True
         self.thread.start()
@@ -476,13 +475,15 @@ class OpenCVCamera(Camera):
         if self.stop_event is not None:
             self.stop_event.set()
 
+        self.new_frame_event.set() 
+
         if self.thread is not None and self.thread.is_alive():
             self.thread.join(timeout=2.0)
 
         self.thread = None
         self.stop_event = None
 
-    def async_read(self, timeout_ms: float = 200) -> NDArray[Any]:
+    def async_read(self, timeout_ms: float = 200, require_new: bool = True) -> NDArray[Any]:
         """
         Reads the latest available frame asynchronously.
 
@@ -493,6 +494,9 @@ class OpenCVCamera(Camera):
         Args:
             timeout_ms (float): Maximum time in milliseconds to wait for a frame
                 to become available. Defaults to 200ms (0.2 seconds).
+            require_new (bool): If True, only return when latest_seq differs from _last_seen_seq
+                (guarantees freshness); otherwise, return the most recent frame immediately,
+                even if it is the same frame as last time (no freshness guarantee).
 
         Returns:
             np.ndarray: The latest captured frame as a NumPy array in the format
@@ -509,21 +513,32 @@ class OpenCVCamera(Camera):
         if self.thread is None or not self.thread.is_alive():
             self._start_read_thread()
 
-        deadline = time.monotonic() + timeout_ms / 1000.0
-
-        # Fast path: if we already have a frame, return it immediately (even if same seq)
-        with self.frame_lock:
-            frame = self.latest_frame
-        if frame is not None:
-            return frame
-        
-        while time.monotonic() < deadline:
-            # short wait to avoid long blocking; event stays set between frames (that’s fine)
-            self.new_frame_event.wait(0.002)
+        def ready(last_seen):
             with self.frame_lock:
                 frame = self.latest_frame
+                seq_now = self.latest_seq
+            if frame is not None and (not require_new or seq_now != last_seen):
+                self._last_seen_seq = seq_now
+                return frame
+            return None
+
+        deadline = time.monotonic() + timeout_ms / 1000.0
+        while True:
+            last_seen = self._last_seen_seq
+            frame = ready(last_seen)
             if frame is not None:
                 return frame
+
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+
+            self.new_frame_event.clear()
+            frame = ready(last_seen)
+            if frame is not None:
+                return frame
+
+            self.new_frame_event.wait(timeout=remaining)
 
         thread_alive = self.thread is not None and self.thread.is_alive()
         raise TimeoutError(
