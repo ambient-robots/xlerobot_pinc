@@ -138,9 +138,6 @@ class RealSenseCamera(Camera):
 
         self.rotation: int | None = get_cv2_rotation(config.rotation)
 
-        self.latest_seq: int = -1
-        self._last_seen_seq: int = -1
-
         if self.height and self.width:
             self.capture_width, self.capture_height = self.width, self.height
             if self.rotation in [cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_90_COUNTERCLOCKWISE]:
@@ -456,8 +453,8 @@ class RealSenseCamera(Camera):
         Internal loop run by the background thread for asynchronous reading.
 
         On each iteration:
-        1. Reads a color frame
-        2. Stores result in latest_frame and increments latest_seq (thread-safe)
+        1. Reads a color frame with 500ms timeout
+        2. Stores result in latest_frame (thread-safe)
         3. Sets new_frame_event to notify listeners
 
         Stops on DeviceNotConnectedError, logs other errors and continues.
@@ -467,11 +464,10 @@ class RealSenseCamera(Camera):
 
         while not self.stop_event.is_set():
             try:
-                color_image = self.read()
+                color_image = self.read(timeout_ms=500)
 
                 with self.frame_lock:
                     self.latest_frame = color_image
-                    self.latest_seq = (self.latest_seq + 1) & 0xFFFFFFFF
                 self.new_frame_event.set()
 
             except DeviceNotConnectedError:
@@ -498,8 +494,6 @@ class RealSenseCamera(Camera):
         if self.stop_event is not None:
             self.stop_event.set()
 
-        self.new_frame_event.set() 
-
         if self.thread is not None and self.thread.is_alive():
             self.thread.join(timeout=2.0)
 
@@ -509,9 +503,9 @@ class RealSenseCamera(Camera):
     # NOTE(Steven): Missing implementation for depth for now
     def async_read(self, timeout_ms: float = 200, require_new: bool = True) -> NDArray[Any]:
         """
-        Reads the latest available frame asynchronously.
+        Reads the latest available frame data (color) asynchronously.
 
-        This method retrieves the most recent frame captured by the background
+        This method retrieves the most recent color frame captured by the background
         read thread. It does not block waiting for the camera hardware directly,
         but may wait up to timeout_ms for the background thread to provide a frame.
 
@@ -523,13 +517,13 @@ class RealSenseCamera(Camera):
                 even if it is the same frame as last time (no freshness guarantee).
 
         Returns:
-            np.ndarray: The latest captured frame as a NumPy array in the format
-                       (height, width, channels), processed according to configuration.
+            np.ndarray:
+            The latest captured frame data (color image), processed according to configuration.
 
         Raises:
             DeviceNotConnectedError: If the camera is not connected.
-            TimeoutError: If no frame becomes available within the specified timeout.
-            RuntimeError: If an unexpected error occurs.
+            TimeoutError: If no frame data becomes available within the specified timeout.
+            RuntimeError: If the background thread died unexpectedly or another error occurs.
         """
         if not self.is_connected:
             raise DeviceNotConnectedError(f"{self} is not connected.")
@@ -537,38 +531,26 @@ class RealSenseCamera(Camera):
         if self.thread is None or not self.thread.is_alive():
             self._start_read_thread()
 
-        def ready(last_seen):
-            with self.frame_lock:
-                frame = self.latest_frame
-                seq_now = self.latest_seq
-            if frame is not None and (not require_new or seq_now != last_seen):
-                self._last_seen_seq = seq_now
-                return frame
-            return None
+        with self.frame_lock:
+            frame = self.latest_frame
+        if not require_new and frame is not None:
+            return frame
+        
+        if not self.new_frame_event.wait(timeout=timeout_ms / 1000.0):
+            thread_alive = self.thread is not None and self.thread.is_alive()
+            raise TimeoutError(
+                f"Timed out waiting for frame from camera {self} after {timeout_ms} ms. "
+                f"Read thread alive: {thread_alive}."
+            )
 
-        deadline = time.monotonic() + timeout_ms / 1000.0
-        while True:
-            last_seen = self._last_seen_seq
-            frame = ready(last_seen)
-            if frame is not None:
-                return frame
-
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
-                break
-
+        with self.frame_lock:
+            frame = self.latest_frame
             self.new_frame_event.clear()
-            frame = ready(last_seen)
-            if frame is not None:
-                return frame
 
-            self.new_frame_event.wait(timeout=remaining)
+        if frame is None:
+            raise RuntimeError(f"Internal error: Event set but no frame available for {self}.")
 
-        thread_alive = self.thread is not None and self.thread.is_alive()
-        raise TimeoutError(
-            f"Timed out waiting for frame from camera {self} after {timeout_ms} ms. "
-            f"Read thread alive: {thread_alive}."
-        )
+        return frame
 
     def disconnect(self) -> None:
         """

@@ -128,9 +128,6 @@ class OpenCVCamera(Camera):
         self.rotation: int | None = get_cv2_rotation(config.rotation)
         self.backend: int = get_cv2_backend()
 
-        self.latest_seq: int = -1
-        self._last_seen_seq: int = -1
-
         if self.height and self.width:
             self.capture_width, self.capture_height = self.width, self.height
             if self.rotation in [cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_90_COUNTERCLOCKWISE]:
@@ -434,7 +431,7 @@ class OpenCVCamera(Camera):
 
         On each iteration:
         1. Reads a color frame
-        2. Stores result in latest_frame and increments latest_seq (thread-safe)
+        2. Stores result in latest_frame (thread-safe)
         3. Sets new_frame_event to notify listeners
 
         Stops on DeviceNotConnectedError, logs other errors and continues.
@@ -448,7 +445,6 @@ class OpenCVCamera(Camera):
 
                 with self.frame_lock:
                     self.latest_frame = color_image
-                    self.latest_seq = (self.latest_seq + 1) & 0xFFFFFFFF
                 self.new_frame_event.set()
 
             except DeviceNotConnectedError:
@@ -475,8 +471,6 @@ class OpenCVCamera(Camera):
         if self.stop_event is not None:
             self.stop_event.set()
 
-        self.new_frame_event.set() 
-
         if self.thread is not None and self.thread.is_alive():
             self.thread.join(timeout=2.0)
 
@@ -494,7 +488,7 @@ class OpenCVCamera(Camera):
         Args:
             timeout_ms (float): Maximum time in milliseconds to wait for a frame
                 to become available. Defaults to 200ms (0.2 seconds).
-            require_new (bool): If True, only return when latest_seq differs from _last_seen_seq
+            require_new (bool): If True, only return when a new frame has been produced 
                 (guarantees freshness); otherwise, return the most recent frame immediately,
                 even if it is the same frame as last time (no freshness guarantee).
 
@@ -513,38 +507,26 @@ class OpenCVCamera(Camera):
         if self.thread is None or not self.thread.is_alive():
             self._start_read_thread()
 
-        def ready(last_seen):
-            with self.frame_lock:
-                frame = self.latest_frame
-                seq_now = self.latest_seq
-            if frame is not None and (not require_new or seq_now != last_seen):
-                self._last_seen_seq = seq_now
-                return frame
-            return None
+        with self.frame_lock:
+            frame = self.latest_frame
+        if not require_new and frame is not None:
+            return frame
+        
+        if not self.new_frame_event.wait(timeout=timeout_ms / 1000.0):
+            thread_alive = self.thread is not None and self.thread.is_alive()
+            raise TimeoutError(
+                f"Timed out waiting for frame from camera {self} after {timeout_ms} ms. "
+                f"Read thread alive: {thread_alive}."
+            )
 
-        deadline = time.monotonic() + timeout_ms / 1000.0
-        while True:
-            last_seen = self._last_seen_seq
-            frame = ready(last_seen)
-            if frame is not None:
-                return frame
-
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
-                break
-
+        with self.frame_lock:
+            frame = self.latest_frame
             self.new_frame_event.clear()
-            frame = ready(last_seen)
-            if frame is not None:
-                return frame
 
-            self.new_frame_event.wait(timeout=remaining)
+        if frame is None:
+            raise RuntimeError(f"Internal error: Event set but no frame available for {self}.")
 
-        thread_alive = self.thread is not None and self.thread.is_alive()
-        raise TimeoutError(
-            f"Timed out waiting for frame from camera {self} after {timeout_ms} ms. "
-            f"Read thread alive: {thread_alive}."
-        )
+        return frame
 
     def disconnect(self) -> None:
         """
