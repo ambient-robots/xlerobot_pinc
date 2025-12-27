@@ -109,6 +109,7 @@ class SO107Follower(Robot):
         return self.bus.is_calibrated
 
     def calibrate(self) -> None:
+        fixed_range_motor = "gripper"
         if self.calibration:
             # self.calibration is not empty here
             user_input = input(
@@ -116,6 +117,7 @@ class SO107Follower(Robot):
             )
             if user_input.strip().lower() != "c":
                 logger.info(f"Writing calibration file associated with the id {self.id} to the motors")
+                calib_to_write = {k: v for k, v in self.calibration.items() if k != fixed_range_motor}
                 self.bus.write_calibration(self.calibration)
                 return
 
@@ -124,17 +126,20 @@ class SO107Follower(Robot):
         for motor in self.bus.motors:
             self.bus.write("Operating_Mode", motor, OperatingMode.POSITION.value)
 
-        input(f"Move {self} to the middle of its range of motion and press ENTER....")
-        homing_offsets = self.bus.set_half_turn_homings()
-
-        fixed_range_motor = "gripper"
         unknown_range_motors = [motor for motor in self.bus.motors if motor != fixed_range_motor]
+        input(f"Move {self} (except '{fixed_range_motor}') to the middle of its range of motion and press ENTER....")
+        homing_offsets = self.bus.set_half_turn_homings(unknown_range_motors)
+        
+        # Read homing offset of the gripper
+        homing_offsets[fixed_range_motor] = self.bus.read("Homing_Offset", fixed_range_motor, normalize=False)
+        logger.debug(f"Half-turn homing offsets: {homing_offsets}")
+
         print(
             f"Move all joints except '{fixed_range_motor}' sequentially through their entire ranges "
             "of motion.\nRecording positions. Press ENTER to stop..."
         )
         range_mins, range_maxes = self.bus.record_ranges_of_motion(unknown_range_motors)
-        range_mins[fixed_range_motor] = 400
+        range_mins[fixed_range_motor] = 548 # 2048 -1500
         range_maxes[fixed_range_motor] = 2048
 
         self.calibration = {}
@@ -147,7 +152,9 @@ class SO107Follower(Robot):
                 range_max=range_maxes[motor],
             )
 
-        self.bus.write_calibration(self.calibration)
+        # Write calibration data to motors except for the gripper
+        calib_to_write = {k: v for k, v in self.calibration.items() if k != fixed_range_motor}
+        self.bus.write_calibration(calib_to_write)
         self._save_calibration()
         print("Calibration saved to", self.calibration_fpath)
 
@@ -166,7 +173,7 @@ class SO107Follower(Robot):
                     self.bus.write("Max_Torque_Limit", motor, 800)  # 80% of the max torque limit to avoid burnout
                     self.bus.write("Torque_Limit", motor, 800)  # 80% of the max torque limit to avoid burnout
                     self.bus.write("Protection_Current", motor, 250)  # 50% of max current to avoid burnout
-                    self.bus.write("Overload_Torque", motor, 65)  # 65% torque when overloaded
+                    self.bus.write("Overload_Torque", motor, 80)  # 80% torque when overloaded
                     self.bus.write("Protection_Time", motor, 2) # 20ms overload protection time
                     self.bus.write("Protective_Torque", motor, 20) # 20% torque when overload is detected
                     self.bus.write("Acceleration", motor, 25) # 25 steps/s^2 goal accelertion
