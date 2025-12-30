@@ -15,7 +15,7 @@ from lerobot.processor.converters import (
     robot_action_observation_to_transition,
     transition_to_robot_action,
 )
-from lerobot.robots.so100_follower.robot_kinematic_processor import (
+from lerobot.robots.so107_follower.robot_kinematic_processor import (
     EEReferenceAndDelta,
     EEBoundsAndSafety,
     GripperVelocityToJoint,
