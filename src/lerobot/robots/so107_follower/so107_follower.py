@@ -118,7 +118,7 @@ class SO107Follower(Robot):
             if user_input.strip().lower() != "c":
                 logger.info(f"Writing calibration file associated with the id {self.id} to the motors")
                 calib_to_write = {k: v for k, v in self.calibration.items() if k != fixed_range_motor}
-                self.bus.write_calibration(self.calibration)
+                self.bus.write_calibration(self.calibration, cache=False)
                 return
 
         logger.info(f"\nRunning calibration of {self}")
@@ -154,7 +154,7 @@ class SO107Follower(Robot):
 
         # Write calibration data to motors except for the gripper
         calib_to_write = {k: v for k, v in self.calibration.items() if k != fixed_range_motor}
-        self.bus.write_calibration(calib_to_write)
+        self.bus.write_calibration(calib_to_write, cache=False)
         self._save_calibration()
         print("Calibration saved to", self.calibration_fpath)
 
@@ -176,8 +176,7 @@ class SO107Follower(Robot):
                     self.bus.write("Overload_Torque", motor, 80)  # 80% torque when overloaded
                     self.bus.write("Protection_Time", motor, 2) # 20ms overload protection time
                     self.bus.write("Protective_Torque", motor, 20) # 20% torque when overload is detected
-                    self.bus.write("Acceleration", motor, 25) # 25 steps/s^2 goal accelertion
-
+                    self.bus.write("Acceleration", motor, 25) # 25*100 steps/s^2 = 220 deg/s^2 goal accelertion
 
     def setup_motors(self) -> None:
         for motor in reversed(self.bus.motors):
@@ -208,7 +207,7 @@ class SO107Follower(Robot):
             start = time.perf_counter()
             obs_dict[cam_key] = cam.async_read(require_new=require_new)
             dt_ms = (time.perf_counter() - start) * 1e3
-            logger.info(f"{self} read {cam_key}: {dt_ms:.1f}ms")
+            logger.debug(f"{self} read {cam_key}: {dt_ms:.1f}ms")
         
         return obs_dict
 
