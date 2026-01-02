@@ -232,12 +232,17 @@ class XLerobotPro(Robot):
 
         fixed_range_motor = "right_arm_gripper"
         unknown_range_motors = [motor for motor in right_motors if motor != fixed_range_motor]
-        input(
-            f"Move right arm and head motors (except '{fixed_range_motor}') to the middle of their range of motion and press ENTER...."
-        )
-        homing_offsets = self.bus_right_head.set_half_turn_homings(unknown_range_motors)
+        homing_offsets = {}
+        for motor in unknown_range_motors:
+            input(
+                f"Move '{motor}' to the middle of its range of motion and press ENTER...."
+            )
+            self.bus_right_head.enable_torque(motor)
+            homing_offsets.update(self.bus_right_head.set_half_turn_homings(motor))
         homing_offsets[fixed_range_motor] = self.bus_right_head.read("Homing_Offset", fixed_range_motor, normalize=False)
-        
+        input("Hold the right arm. Press ENTER when ready...")
+        self.bus_right_head.disable_torque()
+
         print(
             f"Move all right arm and head joints (except '{fixed_range_motor}') sequentially through their "
             "entire ranges of motion.\nRecording positions. Press ENTER to stop..."
@@ -256,7 +261,8 @@ class XLerobotPro(Robot):
                 range_max=range_maxes[motor],
             )
         calib_to_write = {k: v for k, v in calibration_right_head.items() if k != fixed_range_motor}
-        self.bus_right_head.write_calibration(calib_to_write)
+        self.bus_right_head.write_calibration(calib_to_write, cache=False)
+        self.bus_right_head.calibration = calibration_right_head
         
         # calib left motors
         left_motors = self.left_arm_motors + self.base_motors
@@ -266,12 +272,17 @@ class XLerobotPro(Robot):
         
         fixed_range_motor = "left_arm_gripper"
         unknown_range_motors = [motor for motor in self.left_arm_motors if motor != fixed_range_motor]
-        input(
-            f"Move left arm motors (except '{fixed_range_motor}') to the middle of their range of motion and press ENTER...."
-        )
-        homing_offsets = self.bus_left_base.set_half_turn_homings(unknown_range_motors)
+        homing_offsets = {}
+        for motor in unknown_range_motors:
+            input(
+                f"Move '{motor}' to the middle of its range of motion and press ENTER...."
+            )
+            self.bus_left_base.enable_torque(motor)
+            homing_offsets.update(self.bus_left_base.set_half_turn_homings(motor))
         homing_offsets[fixed_range_motor] = self.bus_left_base.read("Homing_Offset", fixed_range_motor, normalize=False)
         homing_offsets.update(dict.fromkeys(self.base_motors, 0))
+        input("Hold the left arm. Press ENTER when ready...")
+        self.bus_left_base.disable_torque()
         
         full_turn_motor = [
             motor for motor in left_motors if any(keyword in motor for keyword in ["wheel"])
@@ -289,7 +300,7 @@ class XLerobotPro(Robot):
         
         calibration_left_base = {}
         for motor, m in self.bus_left_base.motors.items():
-            calibration_left_base[name] = MotorCalibration(
+            calibration_left_base[motor] = MotorCalibration(
                 id=m.id,
                 drive_mode=0,
                 homing_offset=homing_offsets[motor],
@@ -297,7 +308,8 @@ class XLerobotPro(Robot):
                 range_max=range_maxes[motor],
             )
         calib_to_write = {k: v for k, v in calibration_left_base.items() if k != fixed_range_motor}
-        self.bus_left_base.write_calibration(calib_to_write)
+        self.bus_left_base.write_calibration(calib_to_write, cache=False)
+        self.bus_left_base.calibration = calibration_left_base
 
         self.calibration = {**calibration_left_base, **calibration_right_head}
         self._save_calibration()
