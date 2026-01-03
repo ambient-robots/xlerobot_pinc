@@ -148,48 +148,6 @@ class VRWebSocketServer(BaseInputProvider):
     
     async def process_controller_data(self, data: Dict):
         """Process incoming VR controller data."""
-
-        # ONLY FOR DEBUGGING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # # 检查是否有摇杆或按钮操作，只在有操作时打印
-        # has_thumbstick_or_button_activity = False
-        # thumbstick_info = []
-        # button_info = []
-        
-        # # 检查左右手柄的摇杆和按钮状态
-        # for hand in ['leftController', 'rightController']:
-        #     if hand in data:
-        #         controller_data = data[hand]
-        #         hand_name = hand.replace('Controller', '').upper() # hand_name is LEFT or RIGHT
-                
-        #         # 检查摇杆
-        #         if 'thumbstick' in controller_data:
-        #             thumbstick = controller_data['thumbstick']
-        #             x = thumbstick.get('x', 0)
-        #             y = thumbstick.get('y', 0)
-        #             # 只在摇杆有实际输入时打印（阈值0.1）
-        #             if abs(x) > 0.1 or abs(y) > 0.1:
-        #                 has_thumbstick_or_button_activity = True
-        #                 thumbstick_info.append(f"[{hand_name}] Thumbstick: x={x:.2f}, y={y:.2f}")
-                
-        #         # 检查按钮
-        #         if 'buttons' in controller_data:
-        #             buttons = controller_data['buttons']
-        #             pressed_buttons = []
-        #             for button_name, is_pressed in buttons.items():
-        #                 if is_pressed:
-        #                     has_thumbstick_or_button_activity = True
-        #                     pressed_buttons.append(button_name)
-                    
-        #             if pressed_buttons:
-        #                 button_info.append(f"[{hand_name}] Buttons: {', '.join(pressed_buttons)}")
-        
-        # # 只在有操作时打印
-        # if has_thumbstick_or_button_activity:
-        #     print(f"[VR_WS] Activity detected:")
-        #     for info in thumbstick_info:
-        #         print(f"  {info}")
-        #     for info in button_info:
-        #         print(f"  {info}")
         
         # Process controller data
         if 'leftController' in data:

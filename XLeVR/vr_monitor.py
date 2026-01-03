@@ -171,10 +171,6 @@ class VRMonitor:
         self.vr_server = None
         self.https_server = None
         self.is_running = False
-        self.latest_goal = None  # Store the latest goal
-        self.left_goal = None    # Store left and right controller goals separately
-        self.right_goal = None
-        self.headset_goal = None  # Add headset goal
         self._goal_lock = threading.Lock()  # Add thread lock
 
         # per-arm goal queues
@@ -281,16 +277,6 @@ class VRMonitor:
                     # Put goal into the per-arm queue
                     if goal.arm in self._goal_queues:
                         self._goal_queues[goal.arm].append(goal)
-
-                    if goal.arm == "left":
-                        self.left_goal = goal
-                    elif goal.arm == "right":
-                        self.right_goal = goal
-                    elif goal.arm == "headset":  # Add headset data processing
-                        self.headset_goal = goal
-                    
-                    # Maintain backward compatibility, save latest goal
-                    self.latest_goal = goal
                 
             except asyncio.TimeoutError:
                 # Timeout, continue loop
@@ -363,41 +349,6 @@ class VRMonitor:
             print(f"   Metadata: {goal.metadata}")
         
         print("-" * 30)
-    
-    def get_latest_goal_nowait(self, arm=None):
-        """Return the latest VR control goal if available, else None.
-        
-        Args:
-            arm: If specified ("left" or "right"), return that arm's goal.
-                 If None, return a dict containing both left and right goals.
-        """
-        with self._goal_lock:
-            if arm == "left":
-                return self.left_goal
-            elif arm == "right":
-                return self.right_goal
-            elif arm == "headset":  # Add headset data retrieval
-                return self.headset_goal
-            else:
-                # Return dictionary containing both left and right controllers
-                dual_goals = {
-                    "left": self.left_goal,
-                    "right": self.right_goal,
-                    "headset": self.headset_goal,  # Add headset data
-                    "has_left": self.left_goal is not None,
-                    "has_right": self.right_goal is not None,
-                    "has_headset": self.headset_goal is not None  # Add headset status
-                }
-                
-                return dual_goals
-    
-    def get_left_goal_nowait(self):
-        """Return the latest left arm goal if available, else None."""
-        return self.get_latest_goal_nowait("left")
-    
-    def get_right_goal_nowait(self):
-        """Return the latest right arm goal if available, else None."""
-        return self.get_latest_goal_nowait("right")
     
     async def stop_monitoring(self):
         """Stop monitoring"""
