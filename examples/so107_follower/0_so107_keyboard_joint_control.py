@@ -236,45 +236,45 @@ def main():
         
         # Configure and init robot
         cameras = {
-        "left_wrist": OpenCVCameraConfig(
-            index_or_path='/dev/v4l/by-path/platform-a80aa10000.usb-usb-0:1.3:1.0-video-index0', 
-            fps=60,
-            width=640,
-            height=480,
-            color_mode=ColorMode.RGB,
-            rotation=Cv2Rotation.NO_ROTATION,
-            fourcc="MJPG"
-        ),
+        # "left_wrist": OpenCVCameraConfig(
+        #     index_or_path='/dev/v4l/by-path/platform-a80aa10000.usb-usb-0:1.3:1.0-video-index0', 
+        #     fps=60,
+        #     width=640,
+        #     height=480,
+        #     color_mode=ColorMode.RGB,
+        #     rotation=Cv2Rotation.NO_ROTATION,
+        #     fourcc="MJPG"
+        # ),
 
-        "right_wrist": OpenCVCameraConfig(
-            index_or_path='/dev/v4l/by-path/platform-a80aa10000.usb-usb-0:1.4:1.0-video-index0',
-            fps=60,
-            width=640,
-            height=480,
-            color_mode=ColorMode.RGB,
-            rotation=Cv2Rotation.NO_ROTATION,
-            fourcc="MJPG"
-        ),
+        # "right_wrist": OpenCVCameraConfig(
+        #     index_or_path='/dev/v4l/by-path/platform-a80aa10000.usb-usb-0:1.4:1.0-video-index0',
+        #     fps=60,
+        #     width=640,
+        #     height=480,
+        #     color_mode=ColorMode.RGB,
+        #     rotation=Cv2Rotation.NO_ROTATION,
+        #     fourcc="MJPG"
+        # ),
         
-        "head": RealSenseCameraConfig(
-            serial_number_or_name="213622300072",  # Replace with camera SN
-            fps=60,
-            width=640,
-            height=480,
-            color_mode=ColorMode.RGB,
-            rotation=Cv2Rotation.NO_ROTATION,
-            use_depth=False
-        ),
+        # "head": RealSenseCameraConfig(
+        #     serial_number_or_name="213622300072",  # Replace with camera SN
+        #     fps=60,
+        #     width=640,
+        #     height=480,
+        #     color_mode=ColorMode.RGB,
+        #     rotation=Cv2Rotation.NO_ROTATION,
+        #     use_depth=False
+        # ),
 
-        "rear": RealSenseCameraConfig(
-            serial_number_or_name="308222301716",  # Replace with camera SN
-            fps=60,
-            width=640,
-            height=480,
-            color_mode=ColorMode.RGB,
-            rotation=Cv2Rotation.NO_ROTATION,
-            use_depth=False
-        ),
+        # "rear": RealSenseCameraConfig(
+        #     serial_number_or_name="308222301716",  # Replace with camera SN
+        #     fps=60,
+        #     width=640,
+        #     height=480,
+        #     color_mode=ColorMode.RGB,
+        #     rotation=Cv2Rotation.NO_ROTATION,
+        #     use_depth=False
+        # ),
         }
         robot_config = SO107FollowerConfig(port=port, id=id, cameras=cameras, use_degrees=True)
         robot = SO107Follower(robot_config)
