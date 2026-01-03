@@ -416,7 +416,7 @@ AFRAME.registerComponent('controller-updater', {
             leftGamepadInfo = `${buttonLines}\\n${axesInfo}`;
         }
 
-        // Create display text including relative rotation when grip is held
+        // Create display text
         let combinedLeftText = `Pos: ${leftPos.x.toFixed(2)} ${leftPos.y.toFixed(2)} ${leftPos.z.toFixed(2)}\\nRot: ${leftRotX.toFixed(0)} ${leftRotY.toFixed(0)} ${leftRotZ.toFixed(0)}\\n${leftGamepadInfo}`;
 
         if (this.leftHandInfoText) {
@@ -432,22 +432,19 @@ AFRAME.registerComponent('controller-updater', {
           z: this.leftHand.object3D.quaternion.z, 
           w: this.leftHand.object3D.quaternion.w 
         };
-        leftController.trigger = this.leftTriggerDown ? 1 : 0;
         leftController.gripActive = this.leftGripDown;
         
         // Collect thumbstick and button information from the left controller
-        if (this.leftHand && this.leftHand.components && this.leftHand.components['tracked-controls']) {
-            const leftGamepad = this.leftHand.components['tracked-controls'].controller?.gamepad;
-            if (leftGamepad) {
-                leftController.thumbstick = {
-                    x: leftGamepad.axes[2] || 0,
-                    y: leftGamepad.axes[3] || 0
-                };
-                leftController.buttons = {
-                    X: !!leftGamepad.buttons[4]?.pressed,
-                    Y: !!leftGamepad.buttons[5]?.pressed,
-                };
-            }
+        if (leftGamepad) {
+            leftController.thumbstick = {
+                x: leftGamepad.axes[2] || 0,
+                y: leftGamepad.axes[3] || 0
+            };
+            leftController.buttons = {
+                X: !!leftGamepad.buttons[4]?.pressed,
+                Y: !!leftGamepad.buttons[5]?.pressed,
+            };
+            leftController.trigger = leftGamepad.buttons[0]?.value ?? 0;
         }
     } else {
         console.log('Left hand object not available');
@@ -475,7 +472,7 @@ AFRAME.registerComponent('controller-updater', {
           console.log('Right relative rotation:', this.rightRelativeRotation);
         }
         // Get gamepad data via A-Frame tracked-controls
-        let gamepadInfo = '';
+        let rightGamepadInfo = '';
         const rightGamepad = this.rightHand.components?.['tracked-controls']?.controller?.gamepad;
         if (rightGamepad) {
             // Format each button with pressed, touched, value
@@ -488,11 +485,11 @@ AFRAME.registerComponent('controller-updater', {
                 `axis ${i}: ${axis.toFixed(2)}`
             ).join('\\n');
 
-            gamepadInfo = `${buttonLines}\\n${axesInfo}`;
+            rightGamepadInfo = `${buttonLines}\\n${axesInfo}`;
         }
 
-        // Create display text including relative rotation when grip is held
-        let combinedRightText = `Pos: ${rightPos.x.toFixed(2)} ${rightPos.y.toFixed(2)} ${rightPos.z.toFixed(2)}\\nRot:  ${rightRotX.toFixed(0)} ${rightRotY.toFixed(0)} ${rightRotZ.toFixed(0)}\\n${gamepadInfo}`;
+        // Create display text
+        let combinedRightText = `Pos: ${rightPos.x.toFixed(2)} ${rightPos.y.toFixed(2)} ${rightPos.z.toFixed(2)}\\nRot:  ${rightRotX.toFixed(0)} ${rightRotY.toFixed(0)} ${rightRotZ.toFixed(0)}\\n${rightGamepadInfo}`;
 
         if (this.rightHandInfoText) {
             this.rightHandInfoText.setAttribute('value', combinedRightText);
@@ -507,22 +504,19 @@ AFRAME.registerComponent('controller-updater', {
           z: this.rightHand.object3D.quaternion.z, 
           w: this.rightHand.object3D.quaternion.w 
         };
-        rightController.trigger = this.rightTriggerDown ? 1 : 0;
         rightController.gripActive = this.rightGripDown;
         
         // Collect thumbstick and button information from the right controller
-        if (this.rightHand && this.rightHand.components && this.rightHand.components['tracked-controls']) {
-            const rightGamepad = this.rightHand.components['tracked-controls'].controller?.gamepad;
-            if (rightGamepad) {
-                rightController.thumbstick = {
-                    x: rightGamepad.axes[2] || 0,
-                    y: rightGamepad.axes[3] || 0
-                };
-                rightController.buttons = {
-                    A: !!rightGamepad.buttons[4]?.pressed,
-                    B: !!rightGamepad.buttons[5]?.pressed,
-                };
-            }
+        if (rightGamepad) {
+            rightController.thumbstick = {
+                x: rightGamepad.axes[2] || 0,
+                y: rightGamepad.axes[3] || 0
+            };
+            rightController.buttons = {
+                A: !!rightGamepad.buttons[4]?.pressed,
+                B: !!rightGamepad.buttons[5]?.pressed,
+            };
+            rightController.trigger = rightGamepad.buttons[0]?.value ?? 0;
         }
     } else {
         console.log('Right hand object not available');
