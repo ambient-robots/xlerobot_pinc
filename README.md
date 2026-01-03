@@ -1,3 +1,8 @@
+## Initial Setup
+Copy the robot folders into `src/lerobot/robots/` in your local clone of `higgingface/lerobot`
+- For `so107_follower` (6-DoF arm with a pinc open gripper), copy the folder: `src/lerobot/robots/so107_follower`
+- For `xlerobot_pro_tah` (bi-manual so107 with head pan–tilt) and `xlerobot_pro` (with additionally the lekiwi base), copy the folder: `src/lerobot/robots/xlerobot_pro`
+
 ## Symbolic link to USB serial devices (i.e., `/dev/ttyACM0` or `/dev/ttyACM1`)
 The advantage is the actual `/dev/ttyACM0` may change, but the symlink stays valid.
 
