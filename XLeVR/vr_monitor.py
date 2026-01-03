@@ -18,7 +18,7 @@ from typing import Optional
 from collections import deque
 
 # Set the absolute path to the xlevr folder
-XLEVR_PATH = "/home/that/lerobot/examples/xlerobot/XLeVR"
+XLEVR_PATH = "/home/that/lerobot_add_on/XLeVR"
 
 def setup_xlevr_environment():
     """Setup xlevr environment"""

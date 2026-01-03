@@ -28,14 +28,10 @@ AFRAME.registerComponent('controller-updater', {
     // --- Relative rotation tracking ---
     this.leftGripInitialRotation = null;
     this.rightGripInitialRotation = null;
-    this.leftRelativeRotation = { x: 0, y: 0, z: 0 };
-    this.rightRelativeRotation = { x: 0, y: 0, z: 0 };
-
-    // --- Quaternion-based Z-axis rotation tracking ---
     this.leftGripInitialQuaternion = null;
     this.rightGripInitialQuaternion = null;
-    this.leftZAxisRotation = 0;
-    this.rightZAxisRotation = 0;
+    this.leftRelativeRotation = { x: 0, y: 0, z: 0 };
+    this.rightRelativeRotation = { x: 0, y: 0, z: 0 };
 
     // --- Get hostname dynamically ---
     const serverHostname = window.location.hostname;
@@ -144,49 +140,6 @@ AFRAME.registerComponent('controller-updater', {
       };
     };
 
-    // --- Helper function to calculate Z-axis rotation from quaternions ---
-    this.calculateZAxisRotation = (currentQuaternion, initialQuaternion) => {
-      // Calculate relative quaternion (from initial to current)
-      const relativeQuat = new THREE.Quaternion();
-      relativeQuat.multiplyQuaternions(currentQuaternion, initialQuaternion.clone().invert());
-      
-      // Get the controller's current forward direction (local Z-axis in world space)
-      const forwardDirection = new THREE.Vector3(0, 0, 1);
-      forwardDirection.applyQuaternion(currentQuaternion);
-      
-      // Convert relative quaternion to axis-angle representation
-      const angle = 2 * Math.acos(Math.abs(relativeQuat.w));
-      
-      // Handle case where there's no rotation (avoid division by zero)
-      if (angle < 0.0001) {
-        return 0;
-      }
-      
-      // Get the rotation axis
-      const sinHalfAngle = Math.sqrt(1 - relativeQuat.w * relativeQuat.w);
-      const rotationAxis = new THREE.Vector3(
-        relativeQuat.x / sinHalfAngle,
-        relativeQuat.y / sinHalfAngle,
-        relativeQuat.z / sinHalfAngle
-      );
-      
-      // Project the rotation axis onto the forward direction to get the component
-      // of rotation around the forward axis
-      const projectedComponent = rotationAxis.dot(forwardDirection);
-      
-      // The rotation around the forward axis is the angle times the projection
-      const forwardRotation = angle * projectedComponent;
-      
-      // Convert to degrees and handle the sign properly
-      let degrees = THREE.MathUtils.radToDeg(forwardRotation);
-      
-      // Normalize to -180 to +180 range to avoid sudden jumps
-      while (degrees > 180) degrees -= 360;
-      while (degrees < -180) degrees += 360;
-      
-      return degrees;
-    };
-
     // --- Modify Event Listeners ---
     this.leftHand.addEventListener('triggerdown', (evt) => {
         console.log('Left Trigger Pressed');
@@ -223,7 +176,6 @@ AFRAME.registerComponent('controller-updater', {
         this.leftGripInitialRotation = null; // Reset initial rotation
         this.leftGripInitialQuaternion = null; // Reset initial quaternion
         this.leftRelativeRotation = { x: 0, y: 0, z: 0 }; // Reset relative rotation
-        this.leftZAxisRotation = 0; // Reset Z-axis rotation
         this.sendGripRelease('left'); // Send grip release message
     });
 
@@ -262,7 +214,6 @@ AFRAME.registerComponent('controller-updater', {
         this.rightGripInitialRotation = null; // Reset initial rotation
         this.rightGripInitialQuaternion = null; // Reset initial quaternion
         this.rightRelativeRotation = { x: 0, y: 0, z: 0 }; // Reset relative rotation
-        this.rightZAxisRotation = 0; // Reset Z-axis rotation
         this.sendGripRelease('right'); // Send grip release message
     });
     // --- End Modify Event Listeners ---
@@ -427,7 +378,7 @@ AFRAME.registerComponent('controller-updater', {
     };
 
     // Update Left Hand Text & Collect Data
-    // 移除object3D.visible检查，确保即使控制器不可见也能收集数据
+    // Remove the object3D.visible check to ensure data can be collected even when the controller is not visible
     if (this.leftHand && this.leftHand.object3D) {
         const leftPos = this.leftHand.object3D.position;
         const leftRotEuler = this.leftHand.object3D.rotation; // Euler angles in radians
@@ -436,7 +387,6 @@ AFRAME.registerComponent('controller-updater', {
         const leftRotY = THREE.MathUtils.radToDeg(leftRotEuler.y);
         const leftRotZ = THREE.MathUtils.radToDeg(leftRotEuler.z);
 
-        // 添加调试信息
         console.log(`Left Hand - Visible: ${this.leftHand.object3D.visible}, Pos: ${leftPos.x.toFixed(2)},${leftPos.y.toFixed(2)},${leftPos.z.toFixed(2)}`);
 
         // Calculate relative rotation if grip is held
@@ -446,16 +396,7 @@ AFRAME.registerComponent('controller-updater', {
             this.leftGripInitialRotation
           );
           
-          // Calculate Z-axis rotation using quaternions
-          if (this.leftGripInitialQuaternion) {
-            this.leftZAxisRotation = this.calculateZAxisRotation(
-              this.leftHand.object3D.quaternion,
-              this.leftGripInitialQuaternion
-            );
-          }
-          
           console.log('Left relative rotation:', this.leftRelativeRotation);
-          console.log('Left Z-axis rotation:', this.leftZAxisRotation.toFixed(1), 'degrees');
         }
 
         // Get gamepad data via A-Frame tracked-controls for left hand
@@ -477,10 +418,6 @@ AFRAME.registerComponent('controller-updater', {
 
         // Create display text including relative rotation when grip is held
         let combinedLeftText = `Pos: ${leftPos.x.toFixed(2)} ${leftPos.y.toFixed(2)} ${leftPos.z.toFixed(2)}\\nRot: ${leftRotX.toFixed(0)} ${leftRotY.toFixed(0)} ${leftRotZ.toFixed(0)}\\n${leftGamepadInfo}`;
-        // Access button 0 values: leftGamepad.buttons[0].pressed, leftGamepad.buttons[0].touched, leftGamepad.buttons[0].value
-        if (this.leftGripDown && this.leftGripInitialRotation) {
-          combinedLeftText += `\\nZ-Rot: ${this.leftZAxisRotation.toFixed(1)}°`;
-        }
 
         if (this.leftHandInfoText) {
             this.leftHandInfoText.setAttribute('value', combinedLeftText);
@@ -498,16 +435,14 @@ AFRAME.registerComponent('controller-updater', {
         leftController.trigger = this.leftTriggerDown ? 1 : 0;
         leftController.gripActive = this.leftGripDown;
         
-        // 采集左手柄的摇杆和按钮信息
+        // Collect thumbstick and button information from the left controller
         if (this.leftHand && this.leftHand.components && this.leftHand.components['tracked-controls']) {
             const leftGamepad = this.leftHand.components['tracked-controls'].controller?.gamepad;
             if (leftGamepad) {
-                // 摇杆
                 leftController.thumbstick = {
                     x: leftGamepad.axes[2] || 0,
                     y: leftGamepad.axes[3] || 0
                 };
-                // 侧边按钮
                 leftController.buttons = {
                     X: !!leftGamepad.buttons[4]?.pressed,
                     Y: !!leftGamepad.buttons[5]?.pressed,
@@ -519,7 +454,7 @@ AFRAME.registerComponent('controller-updater', {
     }
 
     // Update Right Hand Text & Collect Data
-    // 移除object3D.visible检查，确保即使控制器不可见也能收集数据
+    // Remove the object3D.visible check to ensure data can be collected even when the controller is not visible
     if (this.rightHand && this.rightHand.object3D) {
         const rightPos = this.rightHand.object3D.position;
         const rightRotEuler = this.rightHand.object3D.rotation; // Euler angles in radians
@@ -528,7 +463,6 @@ AFRAME.registerComponent('controller-updater', {
         const rightRotY = THREE.MathUtils.radToDeg(rightRotEuler.y);
         const rightRotZ = THREE.MathUtils.radToDeg(rightRotEuler.z);
 
-        // 添加调试信息
         console.log(`Right Hand - Visible: ${this.rightHand.object3D.visible}, Pos: ${rightPos.x.toFixed(2)},${rightPos.y.toFixed(2)},${rightPos.z.toFixed(2)}`);
 
         // Calculate relative rotation if grip is held
@@ -538,16 +472,7 @@ AFRAME.registerComponent('controller-updater', {
             this.rightGripInitialRotation
           );
           
-          // Calculate Z-axis rotation using quaternions
-          if (this.rightGripInitialQuaternion) {
-            this.rightZAxisRotation = this.calculateZAxisRotation(
-              this.rightHand.object3D.quaternion,
-              this.rightGripInitialQuaternion
-            );
-          }
-          
           console.log('Right relative rotation:', this.rightRelativeRotation);
-          console.log('Right Z-axis rotation:', this.rightZAxisRotation.toFixed(1), 'degrees');
         }
         // Get gamepad data via A-Frame tracked-controls
         let gamepadInfo = '';
@@ -568,11 +493,6 @@ AFRAME.registerComponent('controller-updater', {
 
         // Create display text including relative rotation when grip is held
         let combinedRightText = `Pos: ${rightPos.x.toFixed(2)} ${rightPos.y.toFixed(2)} ${rightPos.z.toFixed(2)}\\nRot:  ${rightRotX.toFixed(0)} ${rightRotY.toFixed(0)} ${rightRotZ.toFixed(0)}\\n${gamepadInfo}`;
-        // Access button 0 values: rightGamepad.buttons[0].pressed, rightGamepad.buttons[0].touched, rightGamepad.buttons[0].value
-
-        if (this.rightGripDown && this.rightGripInitialRotation) {
-          combinedRightText += `\\nZ-Rot: ${this.rightZAxisRotation.toFixed(1)}°`;
-        }
 
         if (this.rightHandInfoText) {
             this.rightHandInfoText.setAttribute('value', combinedRightText);
@@ -590,16 +510,14 @@ AFRAME.registerComponent('controller-updater', {
         rightController.trigger = this.rightTriggerDown ? 1 : 0;
         rightController.gripActive = this.rightGripDown;
         
-        // 采集右手柄的摇杆和按钮信息
+        // Collect thumbstick and button information from the right controller
         if (this.rightHand && this.rightHand.components && this.rightHand.components['tracked-controls']) {
             const rightGamepad = this.rightHand.components['tracked-controls'].controller?.gamepad;
             if (rightGamepad) {
-                // 摇杆
                 rightController.thumbstick = {
                     x: rightGamepad.axes[2] || 0,
                     y: rightGamepad.axes[3] || 0
                 };
-                // 侧边按钮
                 rightController.buttons = {
                     A: !!rightGamepad.buttons[4]?.pressed,
                     B: !!rightGamepad.buttons[5]?.pressed,
@@ -641,7 +559,7 @@ AFRAME.registerComponent('controller-updater', {
 
     // Send combined packet if WebSocket is open and at least one controller has valid data
     if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
-        // 修改发送条件：只要有位置数据就发送，不检查是否为(0,0,0)
+        // Send as long as there is position data; do not check whether it is (0,0,0)
         const hasValidLeft = leftController.position !== null;
         const hasValidRight = rightController.position !== null;
         const hasValidHeadset = headset.position !== null;
@@ -655,7 +573,6 @@ AFRAME.registerComponent('controller-updater', {
             };
             this.websocket.send(JSON.stringify(dualControllerData));
             
-            // 添加调试信息
             console.log('Sending VR data:', {
                 left: hasValidLeft ? 'valid' : 'invalid',
                 right: hasValidRight ? 'valid' : 'invalid',
