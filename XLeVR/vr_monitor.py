@@ -166,11 +166,12 @@ class SimpleHTTPSServer:
 class VRMonitor:
     """VR control information monitor"""
     
-    def __init__(self):
+    def __init__(self, *, print_goal: bool = False):
         self.config = None
         self.vr_server = None
         self.https_server = None
         self.is_running = False
+        self.print_goal = print_goal
         self._goal_lock = threading.Lock()  # Add thread lock
 
         # per-arm goal queues
@@ -269,7 +270,8 @@ class VRMonitor:
             try:
                 # Wait for command with 1-second timeout
                 goal = await asyncio.wait_for(self.command_queue.get(), timeout=1.0)
-                # self.print_control_goal(goal)
+                if self.print_goal:
+                    self.print_control_goal(goal)
                 
                 # Save goal by arm type
                 with self._goal_lock:
@@ -374,7 +376,7 @@ def main():
         return
     
     # Create monitor
-    monitor = VRMonitor()
+    monitor = VRMonitor(print_goal=False)
     
     # Run monitoring
     try:
