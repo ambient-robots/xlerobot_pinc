@@ -32,7 +32,7 @@ from lerobot.motors.feetech import (
 
 from ..robot import Robot
 from ..utils import ensure_safe_goal_position
-from .config_xlerobot_pro import XLerobotProConfig
+from .config_xlerobot_pro_tah import XLerobotProTAHConfig
 
 logger = logging.getLogger(__name__)
 
@@ -45,10 +45,10 @@ class XLerobotProTAH(Robot):
     In parallel, keyboard teleoperation is used to generate raw velocity commands for the wheels.
     """
 
-    config_class = XLerobotProConfig
+    config_class = XLerobotProTAHConfig
     name = "xlerobot_pro"
 
-    def __init__(self, config: XLerobotProConfig):
+    def __init__(self, config: XLerobotProTAHConfig):
         super().__init__(config)
         self.config = config
         norm_mode_body = MotorNormMode.DEGREES if config.use_degrees else MotorNormMode.RANGE_M100_100

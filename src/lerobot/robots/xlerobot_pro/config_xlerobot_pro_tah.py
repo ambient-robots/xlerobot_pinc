@@ -65,7 +65,7 @@ def xlerobot_cameras_config() -> dict[str, CameraConfig]:
     }
 
 
-@RobotConfig.register_subclass("xlerobot_pro")
+@RobotConfig.register_subclass("xlerobot_pro_tah")
 @dataclass
 class XLerobotProTAHConfig(RobotConfig):
     
