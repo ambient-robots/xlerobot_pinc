@@ -196,14 +196,40 @@ class XLerobotPro(Robot):
             )
             if user_input.strip().lower() != "c":
                 try:
-                    logger.info(f"Writing calibration file associated with the id {self.id} to the motors")
+                    is_gripper_updated = False
                     fixed_range_motor = "left_arm_gripper"
-                    calib_to_write = {k: v for k, v in self.bus_left_base.calibration.items() if k != fixed_range_motor}
-                    self.bus_left_base.write_calibration(calib_to_write, cache=False)
-
+                    calibration_left_base = self.bus_left_base.read_calibration()
+                    if self.bus_left_base.calibration[fixed_range_motor] != calibration_left_base[fixed_range_motor]:
+                        logger.info(f"Updating saved calibration of {fixed_range_motor} from device")
+                        self.bus_left_base.calibration[fixed_range_motor].homing_offset = calibration_left_base[fixed_range_motor].homing_offset
+                        self.calibration[fixed_range_motor].homing_offset = calibration_left_base[fixed_range_motor].homing_offset
+                        is_gripper_updated = True
+                    if set(calibration_left_base) != set(self.bus_left_base.calibration):
+                        logger.debug(f"Calibrations mismatched at port: {self.bus_left_base.port}")
+                        logger.debug(f"Calibrations from device at port {self.bus_left_base.port}: {calibration_left_base}")
+                        logger.debug(f"Calibrations from saved config at port {self.bus_left_base.port}: {self.bus_left_base.calibration}")
+                        logger.info(f"Writing calibration file associated with the id {self.id} to the motors at the port {self.bus_left_base.port}")
+                        calib_to_write = {k: v for k, v in self.bus_left_base.calibration.items() if k != fixed_range_motor}
+                        self.bus_left_base.write_calibration(calib_to_write, cache=False)
+                    
                     fixed_range_motor = "right_arm_gripper"
-                    calib_to_write = {k: v for k, v in self.bus_right_head.calibration.items() if k != fixed_range_motor}
-                    self.bus_right_head.write_calibration(calib_to_write, cache=False)
+                    calibration_right_head = self.bus_right_head.read_calibration()
+                    if self.bus_right_head.calibration[fixed_range_motor] != calibration_right_head[fixed_range_motor]:
+                        logger.info(f"Updating saved calibration of {fixed_range_motor} from device")
+                        self.bus_right_head.calibration[fixed_range_motor].homing_offset = calibration_right_head[fixed_range_motor].homing_offset
+                        self.calibration[fixed_range_motor].homing_offset = calibration_right_head[fixed_range_motor].homing_offset
+                        is_gripper_updated = True
+                    if set(calibration_right_head) != set(self.bus_right_head.calibration):
+                        logger.debug(f"Calibrations mismatched at port: {self.bus_right_head.port}")
+                        logger.debug(f"Calibrations from device at port {self.bus_right_head.port}: {calibration_right_head}")
+                        logger.debug(f"Calibrations from saved config at port {self.bus_right_head.port}: {self.bus_right_head.calibration}")
+                        logger.info(f"Writing calibration file associated with the id {self.id} to the motors at port {self.bus_right_head.port}")
+                        calib_to_write = {k: v for k, v in self.bus_right_head.calibration.items() if k != fixed_range_motor}
+                        self.bus_right_head.write_calibration(calib_to_write, cache=False)
+
+                    if is_gripper_updated:
+                        self._save_calibration()
+                        logger.info(f"Updated calibration file saved to {self.calibration_fpath} after gripper calibration update")
                     
                 except Exception as e:
                     logger.warning(f"Failed to restore calibration from file: {e}")
@@ -313,7 +339,7 @@ class XLerobotPro(Robot):
 
         self.calibration = {**calibration_left_base, **calibration_right_head}
         self._save_calibration()
-        print("Calibration saved to", self.calibration_fpath)
+        print(f"Calibration saved to {self.calibration_fpath}")
         
 
     def configure(self):
