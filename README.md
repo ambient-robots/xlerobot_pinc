@@ -1,9 +1,7 @@
 ## Initial Setup
-Copy the robot folders into `src/lerobot/robots/` in your local clone of `higgingface/lerobot`
-- For `so107_follower` (6-DoF arm with a pinc open gripper), copy the folder: `src/lerobot/robots/so107_follower`
-- For `xlerobot_pro_tah` (bi-manual so107 with head pan–tilt) and `xlerobot_pro` (with additionally the lekiwi base), copy the folder: `src/lerobot/robots/xlerobot_pro`
+Copy the folders in `src/lerobot/` into the corresponding directories in your local clone of `higgingface/lerobot`
 
-To use VR teleoperation, copy the XLeVR folder into the same directory where the [vr teleop script](https://github.com/xuweiwu/lerobot_add_on/blob/main/examples/xlerobot_pro/9_vr_teleop_xlerobot_pro_tah.py) is located. Then update `XLEVR_PATH` in [`vr_monitor.py`](https://github.com/xuweiwu/lerobot_add_on/blob/dfc49a0324ec4249d0998b09bc4360295f8beef0/XLeVR/vr_monitor.py#L21)  accordingly.
+To use VR teleoperation, copy the XLeVR folder into the same directory where the vr teleop script is located. Then update `XLEVR_PATH` in `vr_monitor.py` accordingly.
 
 ## Symbolic link to USB serial devices (i.e., `/dev/ttyACM0` or `/dev/ttyACM1`)
 The advantage is the actual `/dev/ttyACM0` may change, but the symlink stays valid.
