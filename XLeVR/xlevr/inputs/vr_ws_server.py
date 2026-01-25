@@ -229,7 +229,7 @@ class VRWebSocketServer(BaseInputProvider):
                 await self.send_goal(goal)
             
     
-    async def handle_grip_release(self, hand: str, buttons):
+    async def handle_grip_release(self, hand: str, buttons=None):
         """Handle grip release for a controller."""
         if hand == 'left':
             controller = self.left_controller
@@ -255,18 +255,19 @@ class VRWebSocketServer(BaseInputProvider):
             logger.info(f"🔓 {hand.upper()} grip released - arm control stopped")
             return
         
-        if any(buttons.values()):
-            # Send idle goal with any button-pressed events
-            goal = ControlGoal(
-                arm=hand,
-                mode=ControlMode.IDLE,
-                buttons=buttons,
-                metadata={
-                    "source": "vr_button_pressed",
-                }
-            )
-            await self.send_goal(goal)
-            logger.info(f"🔓 {hand.upper()} button pressed")
+        if buttons:
+            if any(buttons.values()):
+                # Send idle goal with any button-pressed events
+                goal = ControlGoal(
+                    arm=hand,
+                    mode=ControlMode.IDLE,
+                    buttons=buttons,
+                    metadata={
+                        "source": "vr_button_pressed",
+                    }
+                )
+                await self.send_goal(goal)
+                logger.info(f"🔓 {hand.upper()} button pressed")
         
     
     def euler_to_quaternion(self, euler_deg: Dict[str, float]) -> np.ndarray:
