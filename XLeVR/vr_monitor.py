@@ -18,7 +18,7 @@ from typing import Optional
 from collections import deque
 
 # Set the absolute path to the xlevr folder
-XLEVR_PATH = "/home/that/lerobot_add_on/XLeVR"
+XLEVR_PATH = "/home/that/lerobot/examples/xlerobot/XLeVR"
 
 def setup_xlevr_environment():
     """Setup xlevr environment"""
@@ -316,8 +316,6 @@ class VRMonitor:
             while q:
                 goal = q.popleft()
                 mode_val = getattr(goal.mode, "value", goal.mode)
-                print(f"[QUEUE] got {arm} goal mode={mode_val}, source={goal.metadata.get('source') if goal.metadata else None}")
-
                 if mode_val == "reset":  # ControlMode.RESET.value
                     # keep the last RESET in this batch
                     reset_goal = goal
@@ -326,6 +324,23 @@ class VRMonitor:
                     motion_goal = goal
 
         return reset_goal, motion_goal
+    
+    def reset_goal_queues(self, arm: str | None = None) -> None:
+        """
+        Clear stored goals.
+
+        arm:
+          - None     -> clear all queues ("left", "right", "headset")
+          - "left"   -> clear only left arm queue
+          - "right"  -> clear only right arm queue
+          - "headset"-> clear only headset queue
+        """
+        if arm is None:
+            for q in self._goal_queues.values():
+                q.clear()
+        else:
+            if arm in self._goal_queues:
+                self._goal_queues[arm].clear()
 
     
     def print_control_goal(self, goal):
