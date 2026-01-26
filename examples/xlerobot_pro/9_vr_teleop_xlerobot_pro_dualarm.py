@@ -80,12 +80,12 @@ FULL_START_POS = {
     "right_arm_gripper": 20.0,
 }
 
-TASK_DESCRIPTION = "Do something"
+TASK_DESCRIPTION = "do something"
 HF_REPO_ID = "xuweiwu/do-something"
 NUM_EPISODES = 50
-EPISODE_TIME_SEC = 150
+EPISODE_TIME_SEC = 180
 
-FPS = 50
+FPS = 60
     
 class LowPassEMA:
     def __init__(self, dim: int, alpha: float):
@@ -115,7 +115,7 @@ def alpha_from_fc(fc_hz: float, dt: float) -> float:
     return float(1.0 - np.exp(-2.0 * np.pi * float(fc_hz) * float(dt)))
 
 class SimpleTeleopArm:
-    def __init__(self, joint_map, initial_obs, prefix="left", kp=0.88):
+    def __init__(self, joint_map, initial_obs, prefix="left", kp=0.8):
         self.joint_map = joint_map
         self.prefix = prefix
         self.kp = kp
@@ -134,10 +134,10 @@ class SimpleTeleopArm:
 
         # Delta scaling variables for VR input
         self.vr_relative_position_scaling = 1.5
-        self.vr_relative_rotvec_scaling = 1.1
+        self.vr_relative_rotvec_scaling = 1.2
         
-        self.max_pos_vel = 0.8
-        self.max_rad_vel = 180 * (np.pi/180)
+        self.max_pos_vel = 1.5 # m/s
+        self.max_rad_vel = 180 * (np.pi/180) # rad/s
         self.gripper_vel_step = 1
         self.gripper_clip_min = 20
         self.gripper_clip_max = 100
@@ -147,8 +147,12 @@ class SimpleTeleopArm:
         self.vr_ctrl_to_ee = None
 
         self.dt = 1.0 / FPS
-        fc_pos_hz = 4.0
-        fc_rot_hz = 8.0
+        fc_pos_hz = 5.0 # Hz
+        fc_rot_hz = 10.0 # Hz
+        self.eps_pos = 5e-3 * self.dt  # 5 mm/s -> m/tick
+        self.eps_rot = 5e-2 * self.dt # 0.05 rad/s (about 3 deg/s) -> rad/tick
+        self.vr_stationary_pos = 1e-2 * self.dt  # 10 mm/s -> m/tick
+        self.vr_stationary_rot = 7.5e-2 * self.dt # 0.075 rad/s (about 4.3 deg/s) -> rad/tick
         alpha_pos = alpha_from_fc(fc_pos_hz, self.dt)
         alpha_rot = alpha_from_fc(fc_rot_hz, self.dt)
         alpha_pos = np.clip(alpha_pos, 0.0, 1.0)
@@ -192,6 +196,8 @@ class SimpleTeleopArm:
             to_output=transition_to_robot_action,
         )
         self.ref_action_when_disabled = None
+
+        self.last_obs = None
 
     def handle_vr_input(self, robot, vr_goal):
         """
@@ -261,7 +267,8 @@ class SimpleTeleopArm:
         vr_relative_rotvec = np.asarray(getattr(vr_goal, "relative_rotvec", np.zeros(3)), dtype=float) # [wx, wy, wz] in radian in vr frame
 
         # Avoid commanding small motions
-        is_stationary_vr = (np.linalg.norm(vr_relative_position) < 0.0005 and np.linalg.norm(vr_relative_rotvec) < 0.0025)
+        is_stationary_vr = (np.linalg.norm(vr_relative_position) < self.vr_stationary_pos
+                             and np.linalg.norm(vr_relative_rotvec) < self.vr_stationary_rot)
         if is_stationary_vr:
             vr_relative_position = np.zeros(3, dtype=float)
             vr_relative_rotvec = np.zeros(3, dtype=float)
@@ -271,16 +278,12 @@ class SimpleTeleopArm:
         # x     | -z
         # y     | -x
         # z     |  y
-        vr_relative_position = vr_relative_position * self.vr_relative_position_scaling
+        vr_relative_position *= self.vr_relative_position_scaling
         delta_x = -vr_relative_position[2]
         delta_y = -vr_relative_position[0]
         delta_z = vr_relative_position[1]
 
-        w = vr_relative_rotvec
-        theta = np.linalg.norm(w)
-        if theta > 1e-12:
-            axis = w / theta
-            vr_relative_rotvec = axis * (theta * self.vr_relative_rotvec_scaling)
+        vr_relative_rotvec *= self.vr_relative_rotvec_scaling
         ee_relative_rotvec = self.vr_ctrl_to_ee.apply(vr_relative_rotvec)
         delta_wx = ee_relative_rotvec[0]
         delta_wy = ee_relative_rotvec[1]
@@ -325,15 +328,13 @@ class SimpleTeleopArm:
         }
 
         ee_pose_changed = False
-        eps_pos = 1e-4  # 5 mm/s at 50 Hz
-        eps_rot = 1e-3  # 3 deg/s at 50 Hz
 
         # deadzone on filtered deltas
         pos = np.array([delta_x, delta_y, delta_z])
         rot = np.array([delta_wx, delta_wy, delta_wz])
-        if np.linalg.norm(pos) < eps_pos:
+        if np.linalg.norm(pos) < self.eps_pos:
             pos[:] = 0.0
-        if np.linalg.norm(rot) < eps_rot:
+        if np.linalg.norm(rot) < self.eps_rot:
             rot[:] = 0.0
 
         if np.any(pos != 0.0):
@@ -372,131 +373,57 @@ class SimpleTeleopArm:
         
         for key, ref_pos in ref_action.items():
             self.target_positions[key.removesuffix('.pos')] = ref_pos
+        self.last_obs = obs.copy()
         logger.debug(f"[{self.prefix.capitalize()} ARM TELEOP] Ref joint positions: {self.target_positions}")
+    
+    def p_control_action(self, robot):
 
-    def move_to_target_with_ipol(self, robot, target_positions=None, duration=5.0, control_freq=200.0,
-        max_vel_per_joint=None, max_acc_per_joint=None, max_dev_per_joint=None):
-        """
-        Plan a quadratic-spline trajectory from current q to zero/init pos and execute it
-        at fixed control frequency. Finishes exactly at `duration` if feasible.
-
-        Raises:
-            ValueError if requested duration is infeasible given the limits.
-        """
-        # 0) define target order explicitly via target_positions (canonical order)
-        if target_positions is None:
-            target_positions = self.home_pos.copy()
-        
-        # 1) Read current joint positions (calibrated if provided)
-        if self.prefix=="left":
-            obs_raw = robot.bus_left_base.sync_read("Present_Position", robot.left_arm_motors)
-        else:
-            obs_raw = robot.bus_right_head.sync_read("Present_Position", robot.right_arm_motors)
-        obs = {j: obs_raw[f"{self.joint_map[j]}"] for j in self.joint_map}
-        logger.debug(f"[{self.prefix.capitalize()} ARM IPOL] Current joint positions: {obs}")
-
-        # 2) choose names in the order of home_positions, filter to those present in obs
-        names = [n for n in target_positions if n in obs]
-        missing = [n for n in target_positions if n not in obs]
-        if missing:
-            logger.debug(f"[{self.prefix.capitalize()} ARM IPOL] Warning: skipping joints missing in observation: {missing}")
-
-        # 3) build current/goal vectors in that SAME order (no sorting)
-        q_now = []
-        q_goal = []
-        for n in names:
-            v = float(obs[n])
-            q_now.append(v)
-            q_goal.append(float(target_positions[n]))
-        q_now  = np.array(q_now,  dtype=float)
-        q_goal = np.array(q_goal, dtype=float)
-
-        # 4) Limits (defaults if not provided)
-        J = q_now.size
-        if max_vel_per_joint is None:
-            max_vel_per_joint = np.full(J, 15)   # deg/s (pick something reasonable)
-        if max_acc_per_joint is None:
-            max_acc_per_joint = np.full(J, 30)   # deg/s^2
-        if max_dev_per_joint is None:
-            # for a 2-via move, deviation isn't essential; keep tiny to retain quadratic plumbing
-            max_dev_per_joint = np.full(J, 0.0)
-
-        # 5) Build a 2-via path (current -> goal). You can insert mid vias if you want shaping.
-        via = [
-            Via(q=q_now,  max_dev=max_dev_per_joint),
-            Via(q=q_goal, max_dev=max_dev_per_joint),
-        ]
-        lim = Limits(max_vel=np.asarray(max_vel_per_joint),
-                    max_acc=np.asarray(max_acc_per_joint))
-
-        ipol = QuadraticSplineInterpolator(via, lim)
-        ipol.build()  # builds pieces, samples, ds envelope and forward/backward feasible ds(s)
-        
-        # 6) Slow-down scale so we finish exactly at 'duration'
-        # Scaling ds(s) by k scales time as T = T_min / k -> choose k = T_min / duration
-        ipol.scale_to_duration(duration)
-
-        # 7) Generate time samples and joint references at controller rate
-        dt = 1.0/ float(control_freq)
-        t, q, qd, qdd = ipol.resample(dt)  # will end ~ at `duration`
-
-        # 8) Stream to the robot
-        logger.debug(f"[{self.prefix.capitalize()} ARM IPOL] Streaming ipol trajectory: {len(t)} steps at {control_freq:.1f} Hz; "
-            f"planned duration ≈ {t[-1]:.3f}s (requested {duration:.3f}s)")
-        
-        t0 = time.perf_counter()
-        next_tick = t0
-        for k_step in range(len(t)):
-            
+        if self.last_obs is None:
             if self.prefix=="left":
                 obs_raw = robot.bus_left_base.sync_read("Present_Position", robot.left_arm_motors)
             else:
                 obs_raw = robot.bus_right_head.sync_read("Present_Position", robot.right_arm_motors)
-            obs = {j: obs_raw[f"{self.joint_map[j]}"] for j in self.joint_map}
-
-            q_meas = np.array([float(obs[n]) for n in names], dtype=float)
-            q_ref = np.array([q[k_step, i] for i, n in enumerate(names)], dtype=float)
-            q_cmd = q_meas + self.kp*(q_ref - q_meas)
-            action = {f"{self.joint_map[j]}.pos": q_cmd[i] for i, j in enumerate(names)}
-            robot.send_action(action)
-
-            # sleep to maintain control_freq (best-effort wall clock pacing)
-            next_tick += dt
-            now = time.perf_counter()
-            if now < next_tick:
-                time.sleep(next_tick - now)
-        
-        logger.debug(f"[{self.prefix.capitalize()} ARM IPOL] Reached end of ipol trajectory.")
-        self.target_positions = target_positions.copy()
-        logger.debug(f"[{self.prefix.capitalize()} ARM IPOL] Reset target positions to: {self.target_positions}")
-        self.ee_relative_to_robot_joints_processor.reset()
-        self.ref_action_when_disabled = None
-    
-    def p_control_action(self, robot):
-        if self.prefix=="left":
-            obs_raw = robot.bus_left_base.sync_read("Present_Position", robot.left_arm_motors)
+            obs = {}
+            obs_no_prefix = {}
+            for short_name, bus_name in self.joint_map.items():
+                raw_value = obs_raw[bus_name]
+                obs[f"{bus_name}.pos"] = raw_value
+                obs_no_prefix[short_name] = raw_value
         else:
-            obs_raw = robot.bus_right_head.sync_read("Present_Position", robot.right_arm_motors)
+            obs_no_prefix = {k.removesuffix(".pos"): v for k, v in self.last_obs.items()}
+            obs = {f"{self.prefix}_arm_{k}": v for k, v in self.last_obs.items()}
+            self.last_obs = None
 
-        obs = {}
-        obs_no_prefix = {}
-        for j in self.joint_map:
-            joint_name = self.joint_map[j]
-            raw_value = obs_raw[joint_name]
-            obs[f"{joint_name}.pos"] = raw_value
-            obs_no_prefix[j] = raw_value
+
+        # joint deadzone config
+        tick_deg = 360.0 / 4096.0  # ≈ 0.0879 deg
+        deadband_ticks = 1         # tune: 1..3
+        deadband_deg = deadband_ticks * tick_deg
+
         action = {}
         for j in self.target_positions:
-            error = self.target_positions[j] - obs_no_prefix[j]
-            control = self.kp * error
-            action[f"{self.joint_map[j]}.pos"] = obs_no_prefix[j] + control
+            q = float(obs_no_prefix[j])
+            q_des = float(self.target_positions[j])
+            error = q_des - q
+
+            if j != "gripper":
+                # joint deadzone (degrees)
+                if abs(error) <= deadband_deg:
+                    cmd = q  # hold position
+                else:
+                    cmd = q + self.kp * error
+            else:
+                # no deadzone for gripper (normalized [0,100])
+                cmd = q + self.kp * error
+
+            action[f"{self.joint_map[j]}.pos"] = cmd
         
         logger.debug(f"[{self.prefix.capitalize()} ARM CONTROL] Commanded actions: {action}")
         return action, obs
 
 def move_to_target_full_body_with_ipol(
         robot, left_teleop, right_teleop,
-        target_positions=None, duration=5.0, control_freq=200.0, kp=0.8,
+        target_positions=None, duration=3.0, control_freq=200.0, kp=0.8,
         max_vel_per_joint=None, max_acc_per_joint=None, max_dev_per_joint=None):
         """
         Plan a quadratic-spline trajectory from current q to zero/init pos and execute it
@@ -536,9 +463,9 @@ def move_to_target_full_body_with_ipol(
         # 4) Limits (defaults if not provided)
         J = q_now.size
         if max_vel_per_joint is None:
-            max_vel_per_joint = np.full(J, 15)   # deg/s (pick something reasonable)
+            max_vel_per_joint = np.full(J, 30)   # deg/s (pick something reasonable)
         if max_acc_per_joint is None:
-            max_acc_per_joint = np.full(J, 30)   # deg/s^2
+            max_acc_per_joint = np.full(J, 60)   # deg/s^2
         if max_dev_per_joint is None:
             # for a 2-via move, deviation isn't essential; keep tiny to retain quadratic plumbing
             max_dev_per_joint = np.full(J, 0.0)
@@ -563,7 +490,7 @@ def move_to_target_full_body_with_ipol(
         t, q, qd, qdd = ipol.resample(dt)  # will end ~ at `duration`
 
         # 8) Stream to the robot
-        logger.debug(f"[FULL-BODY IPOL] Streaming ipol trajectory: {len(t)} steps at {control_freq:.1f} Hz; "
+        logger.info(f"[FULL-BODY IPOL] Streaming ipol trajectory: {len(t)} steps at {control_freq:.1f} Hz; "
             f"planned duration ≈ {t[-1]:.3f}s (requested {duration:.3f}s)")
         
         t0 = time.perf_counter()
