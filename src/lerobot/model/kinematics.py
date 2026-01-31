@@ -44,6 +44,10 @@ class RobotKinematics:
         self.solver = placo.KinematicsSolver(self.robot)
         self.solver.mask_fbase(True)  # Fix the base
 
+        # enable joint limits
+        self.solver.enable_joint_limits(True)
+        self.solver.enable_velocity_limits(True)
+
         self.target_frame_name = target_frame_name
 
         # Set joint names
@@ -53,7 +57,15 @@ class RobotKinematics:
         self.tip_frame = self.solver.add_frame_task(self.target_frame_name, np.eye(4))
         
         # Add custom regularization task
-        self.solver.add_regularization_task(1e-4)
+        self.solver.add_regularization_task(1e-2)
+
+
+        joints_task = self.solver.add_joints_task()
+        joints_task.configure("joints", "soft", 1e-4)
+        joints_task.set_joints({
+            "elbow_roll": 0.0,
+            "wrist_roll": 0.0,
+        })
 
     def forward_kinematics(self, joint_pos_deg: np.ndarray) -> np.ndarray:
         """
