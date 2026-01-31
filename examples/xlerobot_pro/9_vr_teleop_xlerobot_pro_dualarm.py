@@ -115,7 +115,7 @@ def alpha_from_fc(fc_hz: float, dt: float) -> float:
     return float(1.0 - np.exp(-2.0 * np.pi * float(fc_hz) * float(dt)))
 
 class SimpleTeleopArm:
-    def __init__(self, joint_map, initial_obs, prefix="left", kp=0.8):
+    def __init__(self, joint_map, initial_obs, prefix="left", kp=0.7):
         self.joint_map = joint_map
         self.prefix = prefix
         self.kp = kp
@@ -133,10 +133,10 @@ class SimpleTeleopArm:
         self.target_positions = self.start_pos.copy()
 
         # Delta scaling variables for VR input
-        self.vr_relative_position_scaling = 1.5
-        self.vr_relative_rotvec_scaling = 1.2
+        self.vr_relative_position_scaling = 1.0
+        self.vr_relative_rotvec_scaling = 1.0
         
-        self.max_pos_vel = 1.5 # m/s
+        self.max_pos_vel = 1.0 # m/s
         self.max_rad_vel = 180 * (np.pi/180) # rad/s
         self.gripper_vel_step = 1
         self.gripper_clip_min = 20
@@ -149,10 +149,10 @@ class SimpleTeleopArm:
         self.dt = 1.0 / FPS
         fc_pos_hz = 5.0 # Hz
         fc_rot_hz = 10.0 # Hz
-        self.eps_pos = 5e-3 * self.dt  # 5 mm/s -> m/tick
-        self.eps_rot = 5e-2 * self.dt # 0.05 rad/s (about 3 deg/s) -> rad/tick
+        self.eps_pos = 2.5e-3 * self.dt  # 5 mm/s -> m/tick
+        self.eps_rot = 1e-2 * self.dt # 0.05 rad/s (about 3 deg/s) -> rad/tick
         self.vr_stationary_pos = 1e-2 * self.dt  # 10 mm/s -> m/tick
-        self.vr_stationary_rot = 7.5e-2 * self.dt # 0.075 rad/s (about 4.3 deg/s) -> rad/tick
+        self.vr_stationary_rot = 4e-2 * self.dt # 0.075 rad/s (about 4.3 deg/s) -> rad/tick
         alpha_pos = alpha_from_fc(fc_pos_hz, self.dt)
         alpha_rot = alpha_from_fc(fc_rot_hz, self.dt)
         alpha_pos = np.clip(alpha_pos, 0.0, 1.0)
@@ -244,12 +244,7 @@ class SimpleTeleopArm:
         logger.debug(f"[{self.prefix.capitalize()} ARM TELEOP] Current joint positions: {obs}")
         
         if mode_val == ControlMode.RESET.value:
-            q_now = []
-            for n in obs:
-                if n != 'gripper.pos':
-                    v = float(obs[n])
-                    q_now.append(v)
-            q_now  = np.array(q_now,  dtype=float)
+            q_now = np.array([float(obs[n]) for n in obs if n != "gripper.pos"], dtype=float)
             ee_frame = self.kinematics.forward_kinematics(q_now)
             R_ee = Rotation.from_matrix(ee_frame[:3, :3])
             R_vr = vr_goal.vr_ctrl_rotation
@@ -267,10 +262,11 @@ class SimpleTeleopArm:
         vr_relative_rotvec = np.asarray(getattr(vr_goal, "relative_rotvec", np.zeros(3)), dtype=float) # [wx, wy, wz] in radian in vr frame
 
         # Avoid commanding small motions
-        is_stationary_vr = (np.linalg.norm(vr_relative_position) < self.vr_stationary_pos
-                             and np.linalg.norm(vr_relative_rotvec) < self.vr_stationary_rot)
-        if is_stationary_vr:
+        is_stationary_vr_pos = np.linalg.norm(vr_relative_position) < self.vr_stationary_pos
+        is_stationary_vr_rot = np.linalg.norm(vr_relative_rotvec) < self.vr_stationary_rot
+        if is_stationary_vr_pos:
             vr_relative_position = np.zeros(3, dtype=float)
+        if is_stationary_vr_rot:
             vr_relative_rotvec = np.zeros(3, dtype=float)
         
         # Transform vr relative position to robot frame
@@ -304,13 +300,16 @@ class SimpleTeleopArm:
         raw_rot = np.array([delta_wx, delta_wy, delta_wz], dtype=float)
 
         # Optional: if VR says "no motion", also reset filter to kill creep
-        if is_stationary_vr:
+        if is_stationary_vr_pos:
             self.vr_pos_lpf.reset(np.zeros(3))
-            self.vr_rot_lpf.reset(np.zeros(3))
             filt_pos = np.zeros(3)
-            filt_rot = np.zeros(3)
         else:
             filt_pos = self.vr_pos_lpf.step(raw_pos)
+        
+        if is_stationary_vr_rot:
+            self.vr_rot_lpf.reset(np.zeros(3))
+            filt_rot = np.zeros(3)
+        else:
             filt_rot = self.vr_rot_lpf.step(raw_rot)
 
         delta_x, delta_y, delta_z = filt_pos.tolist()
