@@ -57,14 +57,19 @@ class RobotKinematics:
         self.tip_frame = self.solver.add_frame_task(self.target_frame_name, np.eye(4))
         
         # Add custom regularization task
-        self.solver.add_regularization_task(1e-2)
+        self.solver.add_regularization_task(1e-3)
 
+        # Add manipulability tasks
+        manip_position = self.solver.add_manipulability_task(self.target_frame_name, "position", 2.0)
+        manip_position.configure("manip_position", "soft", 1e-3)
+
+        manip_orientation = self.solver.add_manipulability_task(self.target_frame_name, "orientation", 2.0)
+        manip_orientation.configure("manip_orientation", "soft", 3e-4)
 
         joints_task = self.solver.add_joints_task()
-        joints_task.configure("joints", "soft", 1e-4)
+        joints_task.configure("joints", "soft", 1e-5)
         joints_task.set_joints({
-            "elbow_roll": 0.0,
-            "wrist_roll": 0.0,
+             "wrist_roll": 0.0,
         })
 
     def forward_kinematics(self, joint_pos_deg: np.ndarray) -> np.ndarray:

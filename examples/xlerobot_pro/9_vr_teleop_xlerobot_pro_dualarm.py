@@ -115,7 +115,7 @@ def alpha_from_fc(fc_hz: float, dt: float) -> float:
     return float(1.0 - np.exp(-2.0 * np.pi * float(fc_hz) * float(dt)))
 
 class SimpleTeleopArm:
-    def __init__(self, joint_map, initial_obs, prefix="left", kp=0.7):
+    def __init__(self, joint_map, initial_obs, prefix="left", kp=0.75):
         self.joint_map = joint_map
         self.prefix = prefix
         self.kp = kp
@@ -136,8 +136,8 @@ class SimpleTeleopArm:
         self.vr_relative_position_scaling = 1.0
         self.vr_relative_rotvec_scaling = 1.0
         
-        self.max_pos_vel = 1.0 # m/s
-        self.max_rad_vel = 180 * (np.pi/180) # rad/s
+        self.max_pos_vel = 0.8 # m/s
+        self.max_rad_vel = 120 * (np.pi/180) # rad/s
         self.gripper_vel_step = 1
         self.gripper_clip_min = 20
         self.gripper_clip_max = 100
@@ -147,12 +147,12 @@ class SimpleTeleopArm:
         self.vr_ctrl_to_ee = None
 
         self.dt = 1.0 / FPS
-        fc_pos_hz = 5.0 # Hz
-        fc_rot_hz = 10.0 # Hz
-        self.eps_pos = 2.5e-3 * self.dt  # 5 mm/s -> m/tick
-        self.eps_rot = 1e-2 * self.dt # 0.05 rad/s (about 3 deg/s) -> rad/tick
-        self.vr_stationary_pos = 1e-2 * self.dt  # 10 mm/s -> m/tick
-        self.vr_stationary_rot = 4e-2 * self.dt # 0.075 rad/s (about 4.3 deg/s) -> rad/tick
+        fc_pos_hz = 10.0 # Hz
+        fc_rot_hz = 15.0 # Hz
+        self.eps_pos = 1e-3 * self.dt  # 2.5 mm/s per axis -> m/tick per axis
+        self.eps_rot = 5e-3 * self.dt # 0.01 rad/s (about 0.6 deg/s) per axis -> rad/tick per axis
+        self.vr_stationary_pos = 4e-3 * self.dt  # 5 mm/s -> m/tick
+        self.vr_stationary_rot = 2e-2 * self.dt # 0.02 rad/s (about 1.2 deg/s) -> rad/tick
         alpha_pos = alpha_from_fc(fc_pos_hz, self.dt)
         alpha_rot = alpha_from_fc(fc_rot_hz, self.dt)
         alpha_pos = np.clip(alpha_pos, 0.0, 1.0)
@@ -178,17 +178,17 @@ class SimpleTeleopArm:
                 ),
                 EEBoundsAndSafety(
                     end_effector_bounds={"min": [-0.5, -0.5, -0.5], "max": [0.5, 0.5, 0.5]},
-                    max_ee_step_m=0.04,
+                    max_ee_step_m=0.05,
                 ),
                 GripperVelocityToJoint(
-                    speed_factor=50.0,
+                    speed_factor=75.0,
                     clip_min=self.gripper_clip_min,
                     clip_max=self.gripper_clip_max,
                 ),
                 InverseKinematicsEEToJoints(
                     kinematics=self.kinematics,
                     motor_names=list(self.target_positions.keys()),
-                    weights={"position": 1.0, "orientation": 0.2},
+                    weights={"position": 1.0, "orientation": 0.3},
                     initial_guess_current_joints=False,
                 ),
             ],
@@ -226,8 +226,6 @@ class SimpleTeleopArm:
         if mode_val == ControlMode.IDLE.value:
             self.vr_calibrated = False
             self.vr_ctrl_to_ee = None
-            self.vr_pos_lpf.reset()
-            self.vr_rot_lpf.reset()
             return
         
         # If we are not calibrated yet, only accept RESET
@@ -260,6 +258,7 @@ class SimpleTeleopArm:
         # Get VR relative pose changes
         vr_relative_position = np.asarray(getattr(vr_goal, "relative_position", np.zeros(3)), dtype=float)# [x, y, z] in meters in vr frame
         vr_relative_rotvec = np.asarray(getattr(vr_goal, "relative_rotvec", np.zeros(3)), dtype=float) # [wx, wy, wz] in radian in vr frame
+        logger.debug(f"[{self.prefix.capitalize()} ARM TELEOP] VR relative positions: {vr_relative_position}; relative rotations: {vr_relative_rotvec}")
 
         # Avoid commanding small motions
         is_stationary_vr_pos = np.linalg.norm(vr_relative_position) < self.vr_stationary_pos
@@ -331,10 +330,8 @@ class SimpleTeleopArm:
         # deadzone on filtered deltas
         pos = np.array([delta_x, delta_y, delta_z])
         rot = np.array([delta_wx, delta_wy, delta_wz])
-        if np.linalg.norm(pos) < self.eps_pos:
-            pos[:] = 0.0
-        if np.linalg.norm(rot) < self.eps_rot:
-            rot[:] = 0.0
+        pos[np.abs(pos) < self.eps_pos] = 0.0
+        rot[np.abs(rot) < self.eps_rot] = 0.0
 
         if np.any(pos != 0.0):
             target_action["target_x"], target_action["target_y"], target_action["target_z"] = pos
@@ -353,7 +350,7 @@ class SimpleTeleopArm:
         thumb = getattr(vr_goal, "thumbstick", None)
         if thumb is not None:
             thumb_y = thumb.get('y', 0)
-            if abs(thumb_y) > 0.25:
+            if abs(thumb_y) > 0.15:
                 if thumb_y > 0:
                     target_action["gripper_vel"] = -self.gripper_vel_step  # Move thumbstick backward to open gripper
                 else:
@@ -392,7 +389,6 @@ class SimpleTeleopArm:
             obs_no_prefix = {k.removesuffix(".pos"): v for k, v in self.last_obs.items()}
             obs = {f"{self.prefix}_arm_{k}": v for k, v in self.last_obs.items()}
             self.last_obs = None
-
 
         # joint deadzone config
         tick_deg = 360.0 / 4096.0  # ≈ 0.0879 deg
