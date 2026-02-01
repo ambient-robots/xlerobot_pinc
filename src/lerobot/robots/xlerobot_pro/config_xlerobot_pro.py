@@ -24,12 +24,13 @@ from ..config import RobotConfig
 def xlerobot_cameras_config() -> dict[str, CameraConfig]:
     return {
         "left_wrist": OpenCVCameraConfig(
-            index_or_path='/dev/v4l/by-path/platform-a80aa10000.usb-usb-0:1.4:1.0-video-index0', 
+            index_or_path='/dev/v4l/by-path/platform-a80aa10000.usb-usb-0:3.2.3:1.0-video-index0', 
             fps=60,
             width=640,
             height=480,
             color_mode=ColorMode.RGB,
             rotation=Cv2Rotation.NO_ROTATION,
+            warmup_s=3,
             fourcc="MJPG"
         ),
 
@@ -40,6 +41,7 @@ def xlerobot_cameras_config() -> dict[str, CameraConfig]:
             height=480,
             color_mode=ColorMode.RGB,
             rotation=Cv2Rotation.NO_ROTATION,
+            warmup_s=3,
             fourcc="MJPG"
         ),
         
@@ -50,18 +52,19 @@ def xlerobot_cameras_config() -> dict[str, CameraConfig]:
             height=480,
             color_mode=ColorMode.RGB,
             rotation=Cv2Rotation.NO_ROTATION,
+            warmup_s=3,
             use_depth=False
         ),
 
-        "rear": RealSenseCameraConfig(
-            serial_number_or_name="308222301716",  # Replace with camera SN
-            fps=60,
-            width=640,
-            height=480,
-            color_mode=ColorMode.RGB,
-            rotation=Cv2Rotation.NO_ROTATION,
-            use_depth=False
-        ),
+        # "rear": RealSenseCameraConfig(
+        #     serial_number_or_name="308222301716",  # Replace with camera SN
+        #     fps=30,
+        #     width=640,
+        #     height=480,
+        #     color_mode=ColorMode.RGB,
+        #     rotation=Cv2Rotation.NO_ROTATION,
+        #     use_depth=False
+        # ),
     }
 
 

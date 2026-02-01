@@ -30,6 +30,7 @@ def xlerobot_cameras_config() -> dict[str, CameraConfig]:
         #     height=480,
         #     color_mode=ColorMode.RGB,
         #     rotation=Cv2Rotation.NO_ROTATION,
+        #     warmup_s=3,
         #     fourcc="MJPG"
         # ),
 
@@ -40,6 +41,7 @@ def xlerobot_cameras_config() -> dict[str, CameraConfig]:
         #     height=480,
         #     color_mode=ColorMode.RGB,
         #     rotation=Cv2Rotation.NO_ROTATION,
+        #     warmup_s=3,
         #     fourcc="MJPG"
         # ),
         
@@ -50,6 +52,7 @@ def xlerobot_cameras_config() -> dict[str, CameraConfig]:
         #     height=480,
         #     color_mode=ColorMode.RGB,
         #     rotation=Cv2Rotation.NO_ROTATION,
+        #     warmup_s=3,
         #     use_depth=False
         # ),
 
@@ -60,6 +63,7 @@ def xlerobot_cameras_config() -> dict[str, CameraConfig]:
         #     height=480,
         #     color_mode=ColorMode.RGB,
         #     rotation=Cv2Rotation.NO_ROTATION,
+        #     warmup_s=3,
         #     use_depth=False
         # ),
     }
