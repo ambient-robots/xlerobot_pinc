@@ -119,6 +119,7 @@ class SO107Follower(Robot):
                 logger.info(f"Writing calibration file associated with the id {self.id} to the motors")
                 calib_to_write = {k: v for k, v in self.calibration.items() if k != fixed_range_motor}
                 self.bus.write_calibration(self.calibration, cache=False)
+                self.bus.calibration = self.calibration
                 return
 
         logger.info(f"\nRunning calibration of {self}")
@@ -155,6 +156,7 @@ class SO107Follower(Robot):
         # Write calibration data to motors except for the gripper
         calib_to_write = {k: v for k, v in self.calibration.items() if k != fixed_range_motor}
         self.bus.write_calibration(calib_to_write, cache=False)
+        self.bus.calibration = self.calibration
         self._save_calibration()
         print("Calibration saved to", self.calibration_fpath)
 
