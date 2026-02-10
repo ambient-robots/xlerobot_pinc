@@ -80,8 +80,8 @@ FULL_START_POS = {
     "right_arm_gripper": 20.0,
 }
 
-TASK_DESCRIPTION = "Fold the baby clothes and place them into the white box."
-HF_REPO_ID = "xuweiwu/baby-clothes-folding"
+TASK_DESCRIPTION = "Take apart the LEGO build and put all pieces into the yellow zippered bag."
+HF_REPO_ID = "xuweiwu/take-part-lego-build"
 NUM_EPISODES = 50
 EPISODE_TIME_SEC = 180
 
@@ -115,7 +115,7 @@ def alpha_from_fc(fc_hz: float, dt: float) -> float:
     return float(1.0 - np.exp(-2.0 * np.pi * float(fc_hz) * float(dt)))
 
 class SimpleTeleopArm:
-    def __init__(self, joint_map, initial_obs, prefix="left", kp=0.8):
+    def __init__(self, joint_map, initial_obs, prefix="left", kp=0.75):
         self.joint_map = joint_map
         self.prefix = prefix
         self.kp = kp
@@ -133,11 +133,11 @@ class SimpleTeleopArm:
         self.target_positions = self.start_pos.copy()
 
         # Delta scaling variables for VR input
-        self.vr_relative_position_scaling = 1.5
-        self.vr_relative_rotvec_scaling = 1.2
+        self.vr_relative_position_scaling = 1.0
+        self.vr_relative_rotvec_scaling = 1.0
         
-        self.max_pos_vel = 1.5 # m/s
-        self.max_rad_vel = 180 * (np.pi/180) # rad/s
+        self.max_pos_vel = 0.8 # m/s
+        self.max_rad_vel = 120 * (np.pi/180) # rad/s
         self.gripper_vel_step = 1
         self.gripper_clip_min = 20
         self.gripper_clip_max = 100
@@ -147,12 +147,12 @@ class SimpleTeleopArm:
         self.vr_ctrl_to_ee = None
 
         self.dt = 1.0 / FPS
-        fc_pos_hz = 5.0 # Hz
-        fc_rot_hz = 10.0 # Hz
-        self.eps_pos = 5e-3 * self.dt  # 5 mm/s -> m/tick
-        self.eps_rot = 5e-2 * self.dt # 0.05 rad/s (about 3 deg/s) -> rad/tick
-        self.vr_stationary_pos = 1e-2 * self.dt  # 10 mm/s -> m/tick
-        self.vr_stationary_rot = 7.5e-2 * self.dt # 0.075 rad/s (about 4.3 deg/s) -> rad/tick
+        fc_pos_hz = 10.0 # Hz
+        fc_rot_hz = 15.0 # Hz
+        self.eps_pos = 1e-3 * self.dt  # 2.5 mm/s per axis -> m/tick per axis
+        self.eps_rot = 5e-3 * self.dt # 0.01 rad/s (about 0.6 deg/s) per axis -> rad/tick per axis
+        self.vr_stationary_pos = 4e-3 * self.dt  # 5 mm/s -> m/tick
+        self.vr_stationary_rot = 2e-2 * self.dt # 0.02 rad/s (about 1.2 deg/s) -> rad/tick
         alpha_pos = alpha_from_fc(fc_pos_hz, self.dt)
         alpha_rot = alpha_from_fc(fc_rot_hz, self.dt)
         alpha_pos = np.clip(alpha_pos, 0.0, 1.0)
@@ -178,17 +178,17 @@ class SimpleTeleopArm:
                 ),
                 EEBoundsAndSafety(
                     end_effector_bounds={"min": [-0.5, -0.5, -0.5], "max": [0.5, 0.5, 0.5]},
-                    max_ee_step_m=0.04,
+                    max_ee_step_m=0.05,
                 ),
                 GripperVelocityToJoint(
-                    speed_factor=50.0,
+                    speed_factor=75.0,
                     clip_min=self.gripper_clip_min,
                     clip_max=self.gripper_clip_max,
                 ),
                 InverseKinematicsEEToJoints(
                     kinematics=self.kinematics,
                     motor_names=list(self.target_positions.keys()),
-                    weights={"position": 1.0, "orientation": 0.2},
+                    weights={"position": 1.0, "orientation": 0.3},
                     initial_guess_current_joints=False,
                 ),
             ],
@@ -226,8 +226,6 @@ class SimpleTeleopArm:
         if mode_val == ControlMode.IDLE.value:
             self.vr_calibrated = False
             self.vr_ctrl_to_ee = None
-            self.vr_pos_lpf.reset()
-            self.vr_rot_lpf.reset()
             return
         
         # If we are not calibrated yet, only accept RESET
@@ -244,12 +242,7 @@ class SimpleTeleopArm:
         logger.debug(f"[{self.prefix.capitalize()} ARM TELEOP] Current joint positions: {obs}")
         
         if mode_val == ControlMode.RESET.value:
-            q_now = []
-            for n in obs:
-                if n != 'gripper.pos':
-                    v = float(obs[n])
-                    q_now.append(v)
-            q_now  = np.array(q_now,  dtype=float)
+            q_now = np.array([float(obs[n]) for n in obs if n != "gripper.pos"], dtype=float)
             ee_frame = self.kinematics.forward_kinematics(q_now)
             R_ee = Rotation.from_matrix(ee_frame[:3, :3])
             R_vr = vr_goal.vr_ctrl_rotation
@@ -265,12 +258,14 @@ class SimpleTeleopArm:
         # Get VR relative pose changes
         vr_relative_position = np.asarray(getattr(vr_goal, "relative_position", np.zeros(3)), dtype=float)# [x, y, z] in meters in vr frame
         vr_relative_rotvec = np.asarray(getattr(vr_goal, "relative_rotvec", np.zeros(3)), dtype=float) # [wx, wy, wz] in radian in vr frame
+        logger.debug(f"[{self.prefix.capitalize()} ARM TELEOP] VR relative positions: {vr_relative_position}; relative rotations: {vr_relative_rotvec}")
 
         # Avoid commanding small motions
-        is_stationary_vr = (np.linalg.norm(vr_relative_position) < self.vr_stationary_pos
-                             and np.linalg.norm(vr_relative_rotvec) < self.vr_stationary_rot)
-        if is_stationary_vr:
+        is_stationary_vr_pos = np.linalg.norm(vr_relative_position) < self.vr_stationary_pos
+        is_stationary_vr_rot = np.linalg.norm(vr_relative_rotvec) < self.vr_stationary_rot
+        if is_stationary_vr_pos:
             vr_relative_position = np.zeros(3, dtype=float)
+        if is_stationary_vr_rot:
             vr_relative_rotvec = np.zeros(3, dtype=float)
         
         # Transform vr relative position to robot frame
@@ -303,14 +298,17 @@ class SimpleTeleopArm:
         raw_pos = np.array([delta_x, delta_y, delta_z], dtype=float)
         raw_rot = np.array([delta_wx, delta_wy, delta_wz], dtype=float)
 
-        # Optional: if VR says "no motion", also reset filter to kill creep
-        if is_stationary_vr:
+        # If VR says "no motion", also reset filter to kill creep
+        if is_stationary_vr_pos:
             self.vr_pos_lpf.reset(np.zeros(3))
-            self.vr_rot_lpf.reset(np.zeros(3))
             filt_pos = np.zeros(3)
-            filt_rot = np.zeros(3)
         else:
             filt_pos = self.vr_pos_lpf.step(raw_pos)
+        
+        if is_stationary_vr_rot:
+            self.vr_rot_lpf.reset(np.zeros(3))
+            filt_rot = np.zeros(3)
+        else:
             filt_rot = self.vr_rot_lpf.step(raw_rot)
 
         delta_x, delta_y, delta_z = filt_pos.tolist()
@@ -332,10 +330,8 @@ class SimpleTeleopArm:
         # deadzone on filtered deltas
         pos = np.array([delta_x, delta_y, delta_z])
         rot = np.array([delta_wx, delta_wy, delta_wz])
-        if np.linalg.norm(pos) < self.eps_pos:
-            pos[:] = 0.0
-        if np.linalg.norm(rot) < self.eps_rot:
-            rot[:] = 0.0
+        pos[np.abs(pos) < self.eps_pos] = 0.0
+        rot[np.abs(rot) < self.eps_rot] = 0.0
 
         if np.any(pos != 0.0):
             target_action["target_x"], target_action["target_y"], target_action["target_z"] = pos
@@ -354,7 +350,7 @@ class SimpleTeleopArm:
         thumb = getattr(vr_goal, "thumbstick", None)
         if thumb is not None:
             thumb_y = thumb.get('y', 0)
-            if abs(thumb_y) > 0.25:
+            if abs(thumb_y) > 0.15:
                 if thumb_y > 0:
                     target_action["gripper_vel"] = -self.gripper_vel_step  # Move thumbstick backward to open gripper
                 else:
@@ -668,6 +664,8 @@ def main():
         print("🚀 Starting VR monitoring...")
         vr_thread = threading.Thread(target=lambda: asyncio.run(vr_monitor.start_monitoring()), daemon=True)
         vr_thread.start()
+        if not vr_monitor.ready_event.wait(timeout=10):
+            raise RuntimeError("VR monitor did not become ready within 10s")
         print("✅ VR system ready")
 
         print("Starting record loop...")

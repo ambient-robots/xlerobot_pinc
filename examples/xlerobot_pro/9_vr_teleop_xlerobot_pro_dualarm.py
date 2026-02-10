@@ -611,7 +611,7 @@ def main():
                         break
                     if g.buttons.get("A", 0):
                         move_to_target_full_body_with_ipol(robot, left_arm_teleop, right_arm_teleop, target_positions=FULL_START_POS)
-                        print("User moved all joints to start pose by pressing right button X")
+                        print("User moved all joints to start pose by pressing right button A")
             if shutdown_event.is_set():
                 print("Shutdown event triggered")
                 break
