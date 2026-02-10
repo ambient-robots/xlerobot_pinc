@@ -31,7 +31,7 @@ def xlerobot_cameras_config() -> dict[str, CameraConfig]:
             color_mode=ColorMode.RGB,
             rotation=Cv2Rotation.NO_ROTATION,
             warmup_s=3,
-            fourcc="MJPG"
+            fourcc="YUYV"
         ),
 
         "right_wrist": OpenCVCameraConfig(
@@ -42,7 +42,7 @@ def xlerobot_cameras_config() -> dict[str, CameraConfig]:
             color_mode=ColorMode.RGB,
             rotation=Cv2Rotation.NO_ROTATION,
             warmup_s=3,
-            fourcc="MJPG"
+            fourcc="YUYV"
         ),
         
         "head": RealSenseCameraConfig(
