@@ -5,6 +5,7 @@ Uses handle_vr_input with delta action control
 """
 
 # Standard library imports
+import os
 import time
 import asyncio
 import logging
@@ -42,6 +43,7 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     force=True)
 logger = logging.getLogger(__name__)
+URDF_PATH = os.getenv("XLEROBOT_URDF_PATH", "/home/that/ambient_urdf/robot.urdf")
 
 # Joint mapping configurations
 LEFT_JOINT_MAP = {
@@ -162,7 +164,7 @@ class SimpleTeleopArm:
 
         joint_names_wo_gripper = [j for j in self.target_positions if j != 'gripper']
         self.kinematics= RobotKinematics(
-            urdf_path="/home/that/ambient_urdf/robot.urdf", 
+            urdf_path=URDF_PATH,
             target_frame_name="gripper_frame_link",
             joint_names=joint_names_wo_gripper,
         )
