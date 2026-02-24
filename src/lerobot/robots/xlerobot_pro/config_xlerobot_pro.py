@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 from dataclasses import dataclass, field
 
 from lerobot.cameras.configs import CameraConfig, Cv2Rotation, ColorMode
@@ -19,6 +20,23 @@ from lerobot.cameras.opencv.configuration_opencv import OpenCVCameraConfig
 from lerobot.cameras.realsense import RealSenseCameraConfig
 
 from ..config import RobotConfig
+
+
+def _env_bool(name: str) -> bool | None:
+    value = os.getenv(name)
+    if value is None:
+        return None
+
+    normalized = value.strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+
+    raise ValueError(
+        f"Invalid boolean value for env var '{name}': {value!r}. "
+        "Use one of: 1/0, true/false, yes/no, on/off."
+    )
 
 
 def xlerobot_cameras_config() -> dict[str, CameraConfig]:
@@ -71,9 +89,11 @@ def xlerobot_cameras_config() -> dict[str, CameraConfig]:
 @RobotConfig.register_subclass("xlerobot_pro")
 @dataclass
 class XLerobotProConfig(RobotConfig):
-    
-    port_right_head: str = "/dev/xlerobot_right_head"  # port to connect to the bus (so101 + head camera)
-    port_left_base: str = "/dev/xlerobot_left_base"  # port to connect to the bus (same as lekiwi setup)
+    # Whether this setup includes the 3-DoF omni mobile platform.
+    has_mobile_platform: bool | None = None
+
+    port_right_head: str = "/dev/xlerobot_right_head"  # port to connect to the bus (so107 + pan-tilt)
+    port_left_base: str = "/dev/xlerobot_left_base"  # port to connect to the bus (so107 + lekiwi base)
     disable_torque_on_disconnect: bool = True
 
     # `max_relative_target` limits the magnitude of the relative positional target vector for safety purposes.
@@ -84,7 +104,7 @@ class XLerobotProConfig(RobotConfig):
     cameras: dict[str, CameraConfig] = field(default_factory=xlerobot_cameras_config)
 
     # Set to `True` for backward compatibility with previous policies/dataset
-    use_degrees: bool = False
+    use_degrees: bool = True
 
     base_teleop_keys: dict[str, str] = field(
         default_factory=lambda: {
@@ -102,3 +122,14 @@ class XLerobotProConfig(RobotConfig):
             "quit": "0",
         }
     )
+
+    def __post_init__(self):
+        super().__post_init__()
+        if self.has_mobile_platform is None:
+            self.has_mobile_platform = _env_bool("XLEROBOT_HAS_MOBILE_PLATFORM")
+
+        if self.has_mobile_platform is None:
+            raise ValueError(
+                "Missing 'has_mobile_platform'. Set it explicitly in XLerobotProConfig(...) "
+                "or export XLEROBOT_HAS_MOBILE_PLATFORM."
+            )
