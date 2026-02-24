@@ -1,7 +1,38 @@
 ## Initial Setup
-Copy the folders in `src/lerobot/` into the corresponding directories in your local clone of `higgingface/lerobot`.
+Use symlinks instead of copying files manually.
 
-To use VR teleoperation, copy the XLeVR folder into the same directory where the vr teleop script is located. Then update `XLEVR_PATH` in `vr_monitor.py` accordingly.
+From this repository:
+```bash
+cd /path/to/xlerobot_pro
+./examples/xlerobot_pro/setup_lerobot_symlinks.sh /path/to/lerobot
+```
+
+This links robot sources, examples, and `XLeVR` into your main `lerobot` checkout and avoids repetitive copy/paste sync mistakes.
+
+## User Runtime Config (JSON -> Env Vars)
+Create your local user config:
+```bash
+cp xlerobot_user_config.example.json xlerobot_user_config.json
+```
+
+Edit `xlerobot_user_config.json`:
+```json
+{
+  "has_mobile_platform": false,
+  "urdf_path": "/absolute/path/to/ambient_urdf/robot.urdf"
+}
+```
+
+Load it in each shell before running scripts:
+```bash
+source /path/to/xlerobot_pro/load_xlerobot_env.sh
+```
+
+This exports:
+- `XLEROBOT_HAS_MOBILE_PLATFORM`
+- `XLEROBOT_URDF_PATH`
+
+All xlerobot_pro examples and config now read these values, so no script-by-script edits are required.
 
 ## Set up symbolic links to USB serial devices (aka motor servo boards)
 The advantage is the actual `/dev/ttyACM0` of a motor servo board may change, but the symlink stays valid.
@@ -67,12 +98,15 @@ If this arm will be used as the left arm in a bimanual setup, change `--robot.po
 ### Complete bimanual + pan-tilt setup
 For the complete bimanual + pan-tilt setup, configuring all motors via a command-line option is not supported. Instead, use the API:
 ```
-from lerobot.robots.xlerobot_pro import XLerobotProTAH, XLerobotProTAHConfig
+from lerobot.robots.xlerobot_pro import XLerobotPro, XLerobotProConfig
 
-config = XLerobotProTAHConfig(
-    id="ambient_xlerobot_pro_tah",
+config = XLerobotProConfig(
+    id="ambient_xlerobot_pro",
+    has_mobile_platform=True,
     use_degrees=True
 )
-robot = XLerobotProTAH(config)
+robot = XLerobotPro(config)
 robot.setup_motors()
 ```
+
+If you prefer env-based setup, you can omit `has_mobile_platform` and set `XLEROBOT_HAS_MOBILE_PLATFORM` instead.
