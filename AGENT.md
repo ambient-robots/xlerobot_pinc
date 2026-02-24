@@ -9,8 +9,6 @@ Guidelines for coding agents working in this repository.
 
 ## Architectural Rules
 - Use one unified robot implementation: `XLerobotPro` + `XLerobotProConfig`.
-- Do not reintroduce `xlerobot_pro_tah` split classes/configs.
-- Backward compatibility is not required for deprecated names in this experimental repo.
 - Treat mobile base support as configuration-driven.
   - `has_mobile_platform` determines whether base motors/features are active.
   - Base-specific logic must be conditional in public methods like `connect()`, `calibrate()`, and `configure()`.
@@ -40,13 +38,13 @@ Guidelines for coding agents working in this repository.
 - Preserve existing style unless there is a clear correctness/readability issue.
 - Add comments only where logic is non-obvious.
 - Do not silently change hardware semantics (motor IDs, calibration behavior, limits) without explicit request.
+- Prefer multiple focused commits grouped by logical concern over a single large mixed commit.
 
 ## Validation Checklist
 - Run targeted static checks after edits:
   - `python -m compileall src examples/xlerobot_pro`
   - `bash -n load_xlerobot_env.sh setup_lerobot_symlinks.sh`
 - Verify grep-level invariants:
-  - no stale `xlerobot_pro_tah` references
   - no new hardcoded user-specific absolute paths in docs/examples
 - Check `git status` and review diffs before concluding.
 
