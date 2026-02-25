@@ -4,10 +4,37 @@ Use symlinks instead of copying files manually.
 From this repository:
 ```bash
 cd /path/to/xlerobot_pro
-./examples/xlerobot_pro/setup_lerobot_symlinks.sh /path/to/lerobot
+./setup_lerobot_symlinks.sh /path/to/lerobot
 ```
 
-This links robot sources, examples, and `XLeVR` into your main `lerobot` checkout and avoids repetitive copy/paste sync mistakes.
+This links the following paths into your main `lerobot` checkout:
+- `src/lerobot/robots/xlerobot_pro`
+- `src/lerobot/robots/so107_follower`
+- `src/lerobot/model/kinematics.py`
+- `src/lerobot/utils/quadratic_spline_via_ipol.py`
+- `src/lerobot/scripts/motor_id_tool.py`
+It intentionally does not link `examples/` or `XLeVR/`.
+
+Sidenote: if a destination path already exists in `lerobot` as a normal file/directory (not a symlink), the script moves it to a timestamped backup like `*.bak.YYYYMMDD_HHMMSS` before creating the new symlink.
+
+## Recommended workflow
+One-time setup:
+1. Run `./setup_lerobot_symlinks.sh /path/to/lerobot`.
+2. Set up USB serial symlinks for motor boards (follow `Set up symbolic links to USB serial devices` below). This is required so default robot ports resolve correctly: `/dev/xlerobot_right_head` and `/dev/xlerobot_left_base`.
+3. Verify symlinks exist: `ls -l /dev/xlerobot_right_head /dev/xlerobot_left_base`.
+4. Create local config: `cp xlerobot_user_config.example.json xlerobot_user_config.json`.
+5. Edit `xlerobot_user_config.json` with your own camera and URDF paths.
+
+For each new terminal:
+1. `conda activate lerobot`
+2. `source /path/to/xlerobot_pro/load_xlerobot_env.sh`
+3. Run scripts.
+
+Example run command:
+```bash
+python /path/to/xlerobot_pro/examples/xlerobot_pro/4_xlerobot_pro_teleop_keyboard.py
+```
+Use the same pattern for other scripts under `/path/to/xlerobot_pro/examples/xlerobot_pro/`.
 
 ## User Runtime Config (JSON -> Env Vars)
 Create your local user config:
@@ -19,9 +46,34 @@ Edit `xlerobot_user_config.json`:
 ```json
 {
   "has_mobile_platform": false,
-  "urdf_path": "/absolute/path/to/ambient_urdf/robot.urdf"
+  "urdf_path": "/absolute/path/to/so107_urdf",
+  "cameras": {
+    "left_wrist": {
+      "index_or_path": "/dev/videoX or /dev/v4l/by-path/platform-XXXX-left-video-index0",
+      "fps": 60,
+      "width": 640,
+      "height": 480,
+      "fourcc": "YUYV"
+    },
+    "right_wrist": {
+      "index_or_path": "/dev/videoX or /dev/v4l/by-path/platform-XXXX-right-video-index0",
+      "fps": 60,
+      "width": 640,
+      "height": 480,
+      "fourcc": "YUYV"
+    },
+    "head": {
+      "serial_number_or_name": "serial number of your realsense head camera",
+      "fps": 60,
+      "width": 640,
+      "height": 480
+    }
+  }
 }
 ```
+`cameras.left_wrist.index_or_path`, `cameras.right_wrist.index_or_path`, and `cameras.head.serial_number_or_name` are required.
+`fps/width/height/fourcc` keys are optional overrides (defaults are currently 60/640/480 and `YUYV` for wrist cameras). `fourcc` applies only to OpenCV wrist cameras.
+The nested `cameras` structure is required by `load_xlerobot_env.sh`.
 
 Load it in each shell before running scripts:
 ```bash
@@ -31,8 +83,22 @@ source /path/to/xlerobot_pro/load_xlerobot_env.sh
 This exports:
 - `XLEROBOT_HAS_MOBILE_PLATFORM`
 - `XLEROBOT_URDF_PATH`
+- `XLEROBOT_LEFT_WRIST_INDEX_OR_PATH`
+- `XLEROBOT_RIGHT_WRIST_INDEX_OR_PATH`
+- `XLEROBOT_HEAD_SERIAL_NUMBER_OR_NAME`
+- `XLEROBOT_LEFT_WRIST_FPS` (optional)
+- `XLEROBOT_LEFT_WRIST_WIDTH` (optional)
+- `XLEROBOT_LEFT_WRIST_HEIGHT` (optional)
+- `XLEROBOT_LEFT_WRIST_FOURCC` (optional)
+- `XLEROBOT_RIGHT_WRIST_FPS` (optional)
+- `XLEROBOT_RIGHT_WRIST_WIDTH` (optional)
+- `XLEROBOT_RIGHT_WRIST_HEIGHT` (optional)
+- `XLEROBOT_RIGHT_WRIST_FOURCC` (optional)
+- `XLEROBOT_HEAD_FPS` (optional)
+- `XLEROBOT_HEAD_WIDTH` (optional)
+- `XLEROBOT_HEAD_HEIGHT` (optional)
 
-All xlerobot_pro examples and config now read these values, so no script-by-script edits are required.
+All xlerobot_pro examples and config now read these values, so no script-by-script edits are required for camera paths/serials.
 
 ## Set up symbolic links to USB serial devices (aka motor servo boards)
 The advantage is the actual `/dev/ttyACM0` of a motor servo board may change, but the symlink stays valid.

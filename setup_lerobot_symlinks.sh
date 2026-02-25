@@ -64,10 +64,6 @@ link_path "src/lerobot/model/kinematics.py" "src/lerobot/model/kinematics.py"
 link_path "src/lerobot/utils/quadratic_spline_via_ipol.py" "src/lerobot/utils/quadratic_spline_via_ipol.py"
 link_path "src/lerobot/scripts/motor_id_tool.py" "src/lerobot/scripts/motor_id_tool.py"
 
-# Examples and VR helpers
-link_path "examples/xlerobot_pro" "examples/xlerobot_pro"
-link_path "XLeVR" "XLeVR"
-
 echo
 echo "Done."
 echo "lerobot repo: ${LEROBOT_REPO}"
