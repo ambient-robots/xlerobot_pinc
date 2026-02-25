@@ -39,35 +39,90 @@ def _env_bool(name: str) -> bool | None:
     )
 
 
+def _required_env_nonempty_str(name: str) -> str:
+    value = os.getenv(name)
+    if value is None or not value.strip():
+        raise ValueError(
+            f"Missing or empty env var '{name}'. "
+            "Set it via load_xlerobot_env.sh or export it in your shell."
+        )
+    stripped = value.strip()
+    return stripped
+
+
+def _env_positive_int(name: str, default: int) -> int:
+    value = os.getenv(name)
+    if value is None:
+        return default
+
+    try:
+        parsed = int(value.strip())
+    except ValueError as exc:
+        raise ValueError(f"Invalid integer value for env var '{name}': {value!r}.") from exc
+
+    if parsed <= 0:
+        raise ValueError(f"Invalid value for env var '{name}': {value!r}. Must be > 0.")
+
+    return parsed
+
+
+def _env_fourcc(name: str, default: str) -> str:
+    value = os.getenv(name)
+    if value is None:
+        return default
+
+    parsed = value.strip()
+    if len(parsed) != 4:
+        raise ValueError(f"Invalid FOURCC for env var '{name}': {value!r}. Must be exactly 4 characters.")
+    return parsed
+
+
 def xlerobot_cameras_config() -> dict[str, CameraConfig]:
+    left_wrist_index_or_path = _required_env_nonempty_str("XLEROBOT_LEFT_WRIST_INDEX_OR_PATH")
+    right_wrist_index_or_path = _required_env_nonempty_str("XLEROBOT_RIGHT_WRIST_INDEX_OR_PATH")
+    head_serial_number_or_name = _required_env_nonempty_str("XLEROBOT_HEAD_SERIAL_NUMBER_OR_NAME")
+    left_wrist_fps = _env_positive_int("XLEROBOT_LEFT_WRIST_FPS", 60)
+    left_wrist_width = _env_positive_int("XLEROBOT_LEFT_WRIST_WIDTH", 640)
+    left_wrist_height = _env_positive_int("XLEROBOT_LEFT_WRIST_HEIGHT", 480)
+    left_wrist_fourcc = _env_fourcc("XLEROBOT_LEFT_WRIST_FOURCC", "YUYV")
+
+    right_wrist_fps = _env_positive_int("XLEROBOT_RIGHT_WRIST_FPS", 60)
+    right_wrist_width = _env_positive_int("XLEROBOT_RIGHT_WRIST_WIDTH", 640)
+    right_wrist_height = _env_positive_int("XLEROBOT_RIGHT_WRIST_HEIGHT", 480)
+    right_wrist_fourcc = _env_fourcc("XLEROBOT_RIGHT_WRIST_FOURCC", "YUYV")
+
+    head_fps = _env_positive_int("XLEROBOT_HEAD_FPS", 60)
+    head_width = _env_positive_int("XLEROBOT_HEAD_WIDTH", 640)
+    head_height = _env_positive_int("XLEROBOT_HEAD_HEIGHT", 480)
+
     return {
         "left_wrist": OpenCVCameraConfig(
-            index_or_path='/dev/v4l/by-path/platform-a80aa10000.usb-usb-0:3.2.3:1.0-video-index0', 
-            fps=60,
-            width=640,
-            height=480,
+            index_or_path=left_wrist_index_or_path,
+            fps=left_wrist_fps,
+            width=left_wrist_width,
+            height=left_wrist_height,
             color_mode=ColorMode.RGB,
             rotation=Cv2Rotation.NO_ROTATION,
             warmup_s=3,
-            fourcc="YUYV"
+            fourcc=left_wrist_fourcc
         ),
 
         "right_wrist": OpenCVCameraConfig(
-            index_or_path='/dev/v4l/by-path/platform-a80aa10000.usb-usb-0:1.3:1.0-video-index0',
-            fps=60,
-            width=640,
-            height=480,
+            index_or_path=right_wrist_index_or_path,
+            fps=right_wrist_fps,
+            width=right_wrist_width,
+            height=right_wrist_height,
             color_mode=ColorMode.RGB,
             rotation=Cv2Rotation.NO_ROTATION,
             warmup_s=3,
-            fourcc="YUYV"
+            fourcc=right_wrist_fourcc
         ),
         
         "head": RealSenseCameraConfig(
-            serial_number_or_name="213622300072",  # Replace with camera SN
-            fps=60,
-            width=640,
-            height=480,
+            serial_number_or_name=head_serial_number_or_name,
+            fps=head_fps,
+            width=head_width,
+            height=head_height,
             color_mode=ColorMode.RGB,
             rotation=Cv2Rotation.NO_ROTATION,
             warmup_s=3,
