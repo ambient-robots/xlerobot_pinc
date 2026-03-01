@@ -5,6 +5,7 @@ Uses handle_vr_input with delta action control
 """
 
 # Standard library imports
+import os
 import time
 import asyncio
 import logging
@@ -42,6 +43,7 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     force=True)
 logger = logging.getLogger(__name__)
+URDF_PATH = os.getenv("XLEROBOT_URDF_PATH", "/home/that/ambient_urdf/robot.urdf")
 
 # Joint mapping configurations
 LEFT_JOINT_MAP = {
@@ -133,7 +135,7 @@ class SimpleTeleopArm:
 
         joint_names_wo_gripper = [j for j in self.target_positions if j != 'gripper']
         self.kinematics= RobotKinematics(
-            urdf_path="/home/that/ambient_urdf/robot.urdf", 
+            urdf_path=URDF_PATH,
             target_frame_name="gripper_frame_link",
             joint_names=joint_names_wo_gripper,
         )
@@ -684,6 +686,9 @@ def move_to_target_full_body_with_ipol(
         right_teleop.ref_action_when_disabled = None
 
 def get_vr_base_action(robot, vr_goal):
+    if not robot.has_mobile_platform:
+        return {}
+
     if vr_goal is None:
         return {}
     
@@ -736,12 +741,16 @@ def main():
     robot, vr_monitor, head_teleop = None, None, None
     robot_name = "ambient_xlerobot_pro"
     try:
-        robot_config = XLerobotProConfig(id=robot_name, use_degrees=True)
+        robot_config = XLerobotProConfig(
+            id=robot_name,
+            use_degrees=True,
+        )
         robot = XLerobotPro(robot_config)
         robot.connect()
         print("[MAIN] Robot connection successful!")
         print(f"[MAIN] Motor bus_left_base info: {robot.bus_left_base.motors}")
         print(f"[MAIN] Motor bus_right_head info: {robot.bus_right_head.motors}") 
+        print(f"[MAIN] Mobile platform enabled: {robot.has_mobile_platform}")
     except Exception as e:
         print(f"[MAIN] Failed to connect to robot: {e}")
         print(f"[MAIN] Robot config: {robot_config}")
@@ -752,9 +761,9 @@ def main():
     continue_choice = input("Do you want to continue to teleop the robot? (y/n, [default y]): ").strip().lower()
     if continue_choice in ['n', 'no']:
         print(f"[MAIN] User decided not to continue")
-        left_base_pos = robot.bus_left_base.sync_read("Present_Position", normalize=False)
+        left_bus_pos = robot.bus_left_base.sync_read("Present_Position", normalize=False)
         right_head_pos = robot.bus_right_head.sync_read("Present_Position", normalize=False)
-        print(f"[MAIN] Left base states: {left_base_pos}")
+        print(f"[MAIN] Left bus states: {left_bus_pos}")
         print(f"[MAIN] Right head states: {right_head_pos}")
         return
     
@@ -858,7 +867,7 @@ def main():
 
             # Base control from LEFT controller ----
             # Use the latest left goal (motion preferred, else reset)
-            if ENABLE_BASE:
+            if ENABLE_BASE and robot.has_mobile_platform:
                 base_source_goal = left_motion or left_reset
                 base_action = get_vr_base_action(robot, base_source_goal)
             else:

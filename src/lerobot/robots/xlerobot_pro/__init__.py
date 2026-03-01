@@ -1,4 +1,2 @@
 from .config_xlerobot_pro import XLerobotProConfig
 from .xlerobot_pro import XLerobotPro
-from .config_xlerobot_pro_tah import XLerobotProTAHConfig
-from .xlerobot_pro_tah import XLerobotProTAH

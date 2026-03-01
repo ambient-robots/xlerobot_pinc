@@ -39,10 +39,7 @@ logger = logging.getLogger(__name__)
 
 class XLerobotPro(Robot):
     """
-    The robot includes a three omniwheel mobile base and a remote follower arm.
-    The leader arm is connected locally (on the laptop) and its joint positions are recorded and then
-    forwarded to the remote follower arm (after applying a safety clamp).
-    In parallel, keyboard teleoperation is used to generate raw velocity commands for the wheels.
+    The robot includes dual follower arms and a pan-tilt head, with an optional 3-wheel mobile platform.
     """
 
     config_class = XLerobotProConfig
@@ -51,14 +48,14 @@ class XLerobotPro(Robot):
     def __init__(self, config: XLerobotProConfig):
         super().__init__(config)
         self.config = config
+        self.has_mobile_platform = config.has_mobile_platform
         self.base_teleop_keys = config.base_teleop_keys
-        # Define three speed levels and a current index
-        self.speed_levels = [
-            {"xy": 0.1, "theta": 15},  # slow
-            {"xy": 0.2, "theta": 30},  # medium
-            {"xy": 0.3, "theta": 60},  # fast
+        self.base_speed_levels = [
+            {"xy": 0.1, "theta": 15},
+            {"xy": 0.2, "theta": 30},
+            {"xy": 0.3, "theta": 60},
         ]
-        self.speed_index = 0  # Start at slow
+        self.base_speed_index = 0
         norm_mode_body = MotorNormMode.DEGREES if config.use_degrees else MotorNormMode.RANGE_M100_100
         if self.calibration.get("left_arm_shoulder_pan") is not None:
             calibration_left_base = {
@@ -69,29 +66,39 @@ class XLerobotPro(Robot):
                 "left_arm_wrist_flex": self.calibration.get("left_arm_wrist_flex"),
                 "left_arm_wrist_roll": self.calibration.get("left_arm_wrist_roll"),
                 "left_arm_gripper": self.calibration.get("left_arm_gripper"),
-                "base_left_wheel": self.calibration.get("base_left_wheel"),
-                "base_back_wheel": self.calibration.get("base_back_wheel"),
-                "base_right_wheel": self.calibration.get("base_right_wheel"),
             }
+            if self.has_mobile_platform:
+                calibration_left_base.update(
+                    {
+                        "base_left_wheel": self.calibration.get("base_left_wheel"),
+                        "base_back_wheel": self.calibration.get("base_back_wheel"),
+                        "base_right_wheel": self.calibration.get("base_right_wheel"),
+                    }
+                )
         else:
             calibration_left_base = self.calibration
-        
+
+        left_base_motors = {
+            "left_arm_shoulder_pan": Motor(1, "sts3250", norm_mode_body),
+            "left_arm_shoulder_lift": Motor(2, "sts3250", norm_mode_body),
+            "left_arm_elbow_flex": Motor(3, "sts3250", norm_mode_body),
+            "left_arm_elbow_roll": Motor(4, "sts3215", norm_mode_body),
+            "left_arm_wrist_flex": Motor(5, "sts3215", norm_mode_body),
+            "left_arm_wrist_roll": Motor(6, "sts3215", norm_mode_body),
+            "left_arm_gripper": Motor(7, "sts3215", MotorNormMode.RANGE_0_100),
+        }
+        if self.has_mobile_platform:
+            left_base_motors.update(
+                {
+                    "base_left_wheel": Motor(8, "sts3215", MotorNormMode.RANGE_M100_100),
+                    "base_back_wheel": Motor(9, "sts3215", MotorNormMode.RANGE_M100_100),
+                    "base_right_wheel": Motor(10, "sts3215", MotorNormMode.RANGE_M100_100),
+                }
+            )
+
         self.bus_left_base = FeetechMotorsBus(
             port=self.config.port_left_base,
-            motors={
-                # left arm
-                "left_arm_shoulder_pan": Motor(1, "sts3250", norm_mode_body),
-                "left_arm_shoulder_lift": Motor(2, "sts3250", norm_mode_body),
-                "left_arm_elbow_flex": Motor(3, "sts3250", norm_mode_body),
-                "left_arm_elbow_roll": Motor(4, "sts3215", norm_mode_body),
-                "left_arm_wrist_flex": Motor(5, "sts3215", norm_mode_body),
-                "left_arm_wrist_roll": Motor(6, "sts3215", norm_mode_body),
-                "left_arm_gripper": Motor(7, "sts3215", MotorNormMode.RANGE_0_100),
-                # base
-                "base_left_wheel": Motor(8, "sts3215", MotorNormMode.RANGE_M100_100),
-                "base_back_wheel": Motor(9, "sts3215", MotorNormMode.RANGE_M100_100),
-                "base_right_wheel": Motor(10, "sts3215", MotorNormMode.RANGE_M100_100),
-            },
+            motors=left_base_motors,
             calibration=calibration_left_base,
         )
         if self.calibration.get("right_arm_shoulder_pan") is not None:
@@ -109,7 +116,7 @@ class XLerobotPro(Robot):
         else:
             calibration_right_head = self.calibration
             
-        self.bus_right_head= FeetechMotorsBus(
+        self.bus_right_head = FeetechMotorsBus(
             port=self.config.port_right_head,
             motors={
                 # right arm
@@ -134,30 +141,27 @@ class XLerobotPro(Robot):
 
     @property
     def _state_ft(self) -> dict[str, type]:
-        return dict.fromkeys(
-            (
-                "left_arm_shoulder_pan.pos",
-                "left_arm_shoulder_lift.pos",
-                "left_arm_elbow_flex.pos",
-                "left_arm_elbow_roll.pos",
-                "left_arm_wrist_flex.pos",
-                "left_arm_wrist_roll.pos",
-                "left_arm_gripper.pos",
-                "right_arm_shoulder_pan.pos",
-                "right_arm_shoulder_lift.pos",
-                "right_arm_elbow_flex.pos",
-                "right_arm_elbow_roll.pos",
-                "right_arm_wrist_flex.pos",
-                "right_arm_wrist_roll.pos",
-                "right_arm_gripper.pos",
-                "head_pan.pos",
-                "head_tilt.pos",
-                "x.vel",
-                "y.vel",
-                "theta.vel",
-            ),
-            float,
-        )
+        state_keys = [
+            "left_arm_shoulder_pan.pos",
+            "left_arm_shoulder_lift.pos",
+            "left_arm_elbow_flex.pos",
+            "left_arm_elbow_roll.pos",
+            "left_arm_wrist_flex.pos",
+            "left_arm_wrist_roll.pos",
+            "left_arm_gripper.pos",
+            "right_arm_shoulder_pan.pos",
+            "right_arm_shoulder_lift.pos",
+            "right_arm_elbow_flex.pos",
+            "right_arm_elbow_roll.pos",
+            "right_arm_wrist_flex.pos",
+            "right_arm_wrist_roll.pos",
+            "right_arm_gripper.pos",
+            "head_pan.pos",
+            "head_tilt.pos",
+        ]
+        if self.has_mobile_platform:
+            state_keys.extend(["x.vel", "y.vel", "theta.vel"])
+        return dict.fromkeys(state_keys, float)
 
     @property
     def _cameras_ft(self) -> dict[str, tuple]:
@@ -290,8 +294,7 @@ class XLerobotPro(Robot):
         self.bus_right_head.write_calibration(calib_to_write, cache=False)
         self.bus_right_head.calibration = calibration_right_head
         
-        # calib left motors
-        left_motors = self.left_arm_motors + self.base_motors
+        # calib left-side motors
         self.bus_left_base.disable_torque(self.left_arm_motors)
         for motor in self.left_arm_motors:
             self.bus_left_base.write("Operating_Mode", motor, OperatingMode.POSITION.value)
@@ -306,13 +309,11 @@ class XLerobotPro(Robot):
             self.bus_left_base.enable_torque(motor)
             homing_offsets.update(self.bus_left_base.set_half_turn_homings(motor))
         homing_offsets[fixed_range_motor] = self.bus_left_base.read("Homing_Offset", fixed_range_motor, normalize=False)
-        homing_offsets.update(dict.fromkeys(self.base_motors, 0))
+        if self.has_mobile_platform:
+            homing_offsets.update(dict.fromkeys(self.base_motors, 0))
         input("Hold the left arm. Press ENTER when ready...")
         self.bus_left_base.disable_torque()
         
-        full_turn_motor = [
-            motor for motor in left_motors if any(keyword in motor for keyword in ["wheel"])
-        ]
         print(
             f"Move all left arm joints except '{fixed_range_motor}' sequentially through their "
             "entire ranges of motion.\nRecording positions. Press ENTER to stop..."
@@ -320,6 +321,8 @@ class XLerobotPro(Robot):
         range_mins, range_maxes = self.bus_left_base.record_ranges_of_motion(unknown_range_motors)
         range_mins[fixed_range_motor] = 548 # 2048 -1500
         range_maxes[fixed_range_motor] = 2048
+
+        full_turn_motor = self.base_motors if self.has_mobile_platform else []
         for motor in full_turn_motor:
             range_mins[motor] = 0
             range_maxes[motor] = 4095
@@ -367,8 +370,9 @@ class XLerobotPro(Robot):
                 self.bus_left_base.write("Protective_Torque", motor, 20) # 20% torque when overload is detected
                 self.bus_left_base.write("Acceleration", motor, 25) # 25*100 steps/s^2 = 220 deg/s^2 goal accelertion
         
-        for motor in self.base_motors:
-            self.bus_left_base.write("Operating_Mode", motor, OperatingMode.VELOCITY.value)
+        if self.has_mobile_platform:
+            for motor in self.base_motors:
+                self.bus_left_base.write("Operating_Mode", motor, OperatingMode.VELOCITY.value)
         
         for motor in self.right_arm_motors:
             self.bus_right_head.write("Operating_Mode", motor, OperatingMode.POSITION.value)
@@ -396,7 +400,11 @@ class XLerobotPro(Robot):
 
 
     def setup_motors(self) -> None:
-        for motor in chain(reversed(self.left_arm_motors), reversed(self.base_motors)):
+        left_bus_motors = list(reversed(self.left_arm_motors))
+        if self.has_mobile_platform:
+            left_bus_motors.extend(reversed(self.base_motors))
+
+        for motor in left_bus_motors:
             input(f"Connect the controller board to the '{motor}' motor only and press enter.")
             self.bus_left_base.setup_motor(motor)
             print(f"'{motor}' motor id set to {self.bus_left_base.motors[motor].id}")
@@ -457,6 +465,9 @@ class XLerobotPro(Robot):
             using _degps_to_raw(). If any command exceeds max_raw, all commands
             are scaled down proportionally.
         """
+        if not self.has_mobile_platform:
+            return {}
+
         # Convert rotational velocity from deg/s to rad/s.
         theta_rad = theta * (np.pi / 180.0)
         # Create the body velocity vector [x, y, theta_rad].
@@ -511,6 +522,8 @@ class XLerobotPro(Robot):
         Returns:
           A dict (x.vel, y.vel, theta.vel) all in m/s
         """
+        if not self.has_mobile_platform:
+            return {}
 
         # Convert each raw command back to an angular speed in deg/s.
         wheel_degps = np.array(
@@ -542,12 +555,15 @@ class XLerobotPro(Robot):
         }  # m/s and deg/s
     
     def _from_keyboard_to_base_action(self, pressed_keys: np.ndarray):
+        if not self.has_mobile_platform:
+            return {}
+
         # Speed control
         if self.base_teleop_keys["speed_up"] in pressed_keys:
-            self.speed_index = min(self.speed_index + 1, 2)
+            self.base_speed_index = min(self.base_speed_index + 1, 2)
         if self.base_teleop_keys["speed_down"] in pressed_keys:
-            self.speed_index = max(self.speed_index - 1, 0)
-        speed_setting = self.speed_levels[self.speed_index]
+            self.base_speed_index = max(self.base_speed_index - 1, 0)
+        speed_setting = self.base_speed_levels[self.base_speed_index]
         xy_speed = speed_setting["xy"]  # e.g. 0.1, 0.25, or 0.4
         theta_speed = speed_setting["theta"]  # e.g. 30, 60, or 90
 
@@ -580,18 +596,19 @@ class XLerobotPro(Robot):
         if not self.is_connected:
             raise DeviceNotConnectedError(f"{self} is not connected.")
 
-        # Read actuators position for arm and vel for base
+        # Read actuators position for arms/head and optional base velocity
         start = time.perf_counter()
         left_arm_pos = self.bus_left_base.sync_read("Present_Position", self.left_arm_motors)
         right_arm_pos = self.bus_right_head.sync_read("Present_Position", self.right_arm_motors)
         head_pos = self.bus_right_head.sync_read("Present_Position", self.head_motors)
-        base_wheel_vel = self.bus_left_base.sync_read("Present_Velocity", self.base_motors)
-        
-        base_vel = self._wheel_raw_to_body(
-            base_wheel_vel["base_left_wheel"],
-            base_wheel_vel["base_back_wheel"],
-            base_wheel_vel["base_right_wheel"],
-        )
+        base_vel = {}
+        if self.has_mobile_platform:
+            base_wheel_vel = self.bus_left_base.sync_read("Present_Velocity", self.base_motors)
+            base_vel = self._wheel_raw_to_body(
+                base_wheel_vel["base_left_wheel"],
+                base_wheel_vel["base_back_wheel"],
+                base_wheel_vel["base_right_wheel"],
+            )
         
         left_arm_state = {f"{k}.pos": v for k, v in left_arm_pos.items()}
         right_arm_state = {f"{k}.pos": v for k, v in right_arm_pos.items()}
@@ -637,12 +654,14 @@ class XLerobotPro(Robot):
         left_arm_pos = {k: v for k, v in action.items() if k.startswith("left_arm_") and k.endswith(".pos")}
         right_arm_pos = {k: v for k, v in action.items() if k.startswith("right_arm_") and k.endswith(".pos")}
         head_pos = {k: v for k, v in action.items() if k.startswith("head_") and k.endswith(".pos")}
-        base_goal_vel = {k: v for k, v in action.items() if k.endswith(".vel")}
-        base_wheel_goal_vel = self._body_to_wheel_raw(
-            base_goal_vel.get("x.vel", 0.0),
-            base_goal_vel.get("y.vel", 0.0),
-            base_goal_vel.get("theta.vel", 0.0),
-        )
+        base_goal_vel = {k: v for k, v in action.items() if k.endswith(".vel")} if self.has_mobile_platform else {}
+        base_wheel_goal_vel = {}
+        if self.has_mobile_platform and base_goal_vel:
+            base_wheel_goal_vel = self._body_to_wheel_raw(
+                base_goal_vel.get("x.vel", 0.0),
+                base_goal_vel.get("y.vel", 0.0),
+                base_goal_vel.get("theta.vel", 0.0),
+            )
         
         
         if self.config.max_relative_target is not None:
@@ -676,7 +695,7 @@ class XLerobotPro(Robot):
             self.bus_right_head.sync_write("Goal_Position", right_arm_pos_raw)
         if head_pos_raw:
             self.bus_right_head.sync_write("Goal_Position", head_pos_raw)
-        if base_wheel_goal_vel:
+        if self.has_mobile_platform and base_wheel_goal_vel:
             self.bus_left_base.sync_write("Goal_Velocity", base_wheel_goal_vel)
         return {
             **left_arm_pos,
@@ -686,6 +705,8 @@ class XLerobotPro(Robot):
         }
 
     def stop_base(self):
+        if not self.has_mobile_platform:
+            return
         self.bus_left_base.sync_write("Goal_Velocity", dict.fromkeys(self.base_motors, 0), num_retry=5)
         logger.info("Base motors stopped")
 
@@ -693,7 +714,8 @@ class XLerobotPro(Robot):
         if not self.is_connected:
             raise DeviceNotConnectedError(f"{self} is not connected.")
 
-        self.stop_base()
+        if self.has_mobile_platform:
+            self.stop_base()
         self.bus_left_base.disconnect(self.config.disable_torque_on_disconnect)
         self.bus_right_head.disconnect(self.config.disable_torque_on_disconnect)
         for cam in self.cameras.values():

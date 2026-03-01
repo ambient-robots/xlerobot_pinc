@@ -1,0 +1,26 @@
+{
+  "has_mobile_platform": false,
+  "urdf_path": "/absolute/path/to/so107_urdf",
+  "cameras": {
+    "left_wrist": {
+      "index_or_path": "/dev/videoX or /dev/v4l/by-path/platform-XXXX-left-video-index0",
+      "fps": 60,
+      "width": 640,
+      "height": 480,
+      "fourcc": "YUYV"
+    },
+    "right_wrist": {
+      "index_or_path": "/dev/videoX or /dev/v4l/by-path/platform-XXXX-right-video-index0",
+      "fps": 60,
+      "width": 640,
+      "height": 480,
+      "fourcc": "YUYV"
+    },
+    "head": {
+      "serial_number_or_name": "serial number of your realsense head camera",
+      "fps": 60,
+      "width": 640,
+      "height": 480
+    }
+  }
+}

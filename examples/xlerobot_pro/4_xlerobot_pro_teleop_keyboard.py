@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import time
 import logging
 import traceback
@@ -28,6 +29,7 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     force=True)
 logger = logging.getLogger(__name__)
+URDF_PATH = os.getenv("XLEROBOT_URDF_PATH", "/home/that/ambient_urdf/robot.urdf")
 
 # Keymaps (semantic action: key)
 LEFT_KEYMAP = {
@@ -244,7 +246,7 @@ class SimpleTeleopArm:
 
         joint_names_wo_gripper = [j for j in self.target_positions if j != 'gripper']
         self.kinematics= RobotKinematics(
-            urdf_path="/home/that/ambient_urdf/robot.urdf", 
+            urdf_path=URDF_PATH,
             target_frame_name="gripper_frame_link",
             joint_names=joint_names_wo_gripper,
         )
@@ -573,12 +575,16 @@ def move_to_target_full_body_with_ipol(
 def main():
     robot_name = "ambient_xlerobot_pro"
     try:
-        robot_config = XLerobotProConfig(id=robot_name, use_degrees=True)
+        robot_config = XLerobotProConfig(
+            id=robot_name,
+            use_degrees=True,
+        )
         robot = XLerobotPro(robot_config)
         robot.connect()
         print("[MAIN] Robot connection successful!")
         print(f"[MAIN] Motor bus_left_base info: {robot.bus_left_base.motors}")
         print(f"[MAIN] Motor bus_right_head info: {robot.bus_right_head.motors}")
+        print(f"[MAIN] Mobile platform enabled: {robot.has_mobile_platform}")
     except Exception as e:
         print(f"[MAIN] Failed to connect to robot: {e}")
         print(f"[MAIN] Robot config: {robot_config}")
@@ -589,9 +595,9 @@ def main():
     continue_choice = input("Do you want to continue to teleop the robot? (y/n, [default y]): ").strip().lower()
     if continue_choice in ['n', 'no']:
         print(f"[MAIN] User decided not to continue")
-        left_base_pos = robot.bus_left_base.sync_read("Present_Position", normalize=False)
+        left_bus_pos = robot.bus_left_base.sync_read("Present_Position", normalize=False)
         right_head_pos = robot.bus_right_head.sync_read("Present_Position", normalize=False)
-        print(f"[MAIN] Left base states: {left_base_pos}")
+        print(f"[MAIN] Left bus states: {left_bus_pos}")
         print(f"[MAIN] Right head states: {right_head_pos}")
         return
 
@@ -656,10 +662,11 @@ def main():
             right_action = right_arm_teleop.p_control_action(robot)
             head_action = head_teleop.p_control_action(robot)
 
-            # Base action
-            keyboard_keys = np.array(list(pressed_keys))
-            base_action = robot._from_keyboard_to_base_action(keyboard_keys) or {}
-            print(f"[MAIN] Base action: {base_action}")
+            base_action = {}
+            if robot.has_mobile_platform:
+                keyboard_keys = np.array(list(pressed_keys))
+                base_action = robot._from_keyboard_to_base_action(keyboard_keys) or {}
+                print(f"[MAIN] Base action: {base_action}")
 
             action = {**left_action, **right_action, **head_action, **base_action}
             robot.send_action(action)
