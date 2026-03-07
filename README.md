@@ -202,7 +202,7 @@ All xlerobot_pro examples and config now read these values, so no script-by-scri
 
 ## Acknowledgements
 
-`xlerobot_pro` is extended from [XLeRobot](https://github.com/Vector-Wangel/XLeRobot), and the broader robot platform and build workflow in this repo build on that upstream project.
+`xlerobot_pro` is extended from [XLeRobot](https://github.com/Vector-Wangel/XLeRobot), and both the robot platform and parts of the software stack in this repo build on that upstream project. This includes adapted software components derived from that lineage, such as the bundled `XLeVR` VR teleoperation module.
 
 The gripper setup used in the SO107-style arm configuration is based on [PincOpen](https://github.com/pollen-robotics/PincOpen).
 
