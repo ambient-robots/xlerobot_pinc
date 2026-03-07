@@ -1,0 +1,4 @@
+interface:
+  display_name: "XLerobot Hardware Setup"
+  short_description: "Guide hardware setup and calibration"
+  default_prompt: "Use $xlerobot-hardware-setup to prepare ports, cameras, and calibration for this robot setup."

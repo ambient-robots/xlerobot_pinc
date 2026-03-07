@@ -1,0 +1,4 @@
+interface:
+  display_name: "XLerobot LeRobot Sync"
+  short_description: "Link and verify lerobot integration"
+  default_prompt: "Use $xlerobot-lerobot-sync to sync this repo into a lerobot checkout with symlinks and verification."

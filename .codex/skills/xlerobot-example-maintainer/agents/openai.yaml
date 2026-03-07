@@ -1,0 +1,4 @@
+interface:
+  display_name: "XLerobot Example Maintainer"
+  short_description: "Update examples for config changes"
+  default_prompt: "Use $xlerobot-example-maintainer to update xlerobot example scripts when runtime config or env behavior changes."
