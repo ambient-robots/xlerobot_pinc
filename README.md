@@ -15,6 +15,11 @@ Example run command:
 python /path/to/xlerobot_pro/examples/xlerobot_pro/4_xlerobot_pro_teleop_keyboard.py
 ```
 
+## Hardware
+Physical hardware lineage and source notes are documented under [hardware/README.md](hardware/README.md).
+
+This repo is extended from `XLeRobot`, upgraded to an SO107-style 6-DoF arm setup, and uses a gripper based on `PincOpen`. The `hardware/` folder documents where to obtain the relevant upstream printable files.
+
 <a id="link-xlerobot-into-lerobot"></a>
 ## Link xlerobot_pro into lerobot
 Use symlinks instead of copying files manually.
@@ -194,3 +199,11 @@ source /path/to/xlerobot_pro/load_xlerobot_env.sh
   - `XLEROBOT_HEAD_HEIGHT` (optional)
 
 All xlerobot_pro examples and config now read these values, so no script-by-script edits are required for camera paths/serials.
+
+## Acknowledgements
+
+`xlerobot_pro` is extended from [XLeRobot](https://github.com/Vector-Wangel/XLeRobot), and both the robot platform and parts of the software stack in this repo build on that upstream project. This includes adapted software components derived from that lineage, such as the bundled `XLeVR` VR teleoperation module.
+
+The gripper setup used in the SO107-style arm configuration is based on [PincOpen](https://github.com/pollen-robotics/PincOpen).
+
+See [hardware/README.md](hardware/README.md) for hardware source notes.
