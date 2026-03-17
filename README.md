@@ -32,11 +32,11 @@
  
 ### Cables & Connectors
  
-| # | Component | Qty | Unit Price (€) | Total (€) | Link |
-|---|-----------|-----|-----------------|-----------|------|
-| 9 | USB-C to USB-A Cable (Anker, 1.8 m) | 2 | 3.43 | 6.86 | [Amazon.de](https://www.amazon.de/Anker-doppelt-geflochtenes-Ladekabel-Samsung-Schwarz/dp/B07DC5PPFV) |
-| 10 | JST Wire Connector Kit (servo cable extension) | 1 | ~7.50 | ~7.50 | [Amazon.de](https://www.amazon.de/Männlich-Weiblich-Adapterkabel-Verbinder-Platinenstecker/dp/B0BZHR5NCR) |
-| 11 | 3-Pin Extension Cable (servo) | 1 | ~5.50 | ~5.50 | [Amazon.de](https://www.amazon.de/gp/product/B0F88H5DLC) |
+| # | Component | Qty | Unit Price (€) | Total (€) | Link |Comment|
+|---|-----------|-----|-----------------|-----------|------|------|
+| 9 | USB-C to USB-A Cable (Anker, 1.8 m) | 2 | 3.43 | 6.86 | [Amazon.de](https://www.amazon.de/Anker-doppelt-geflochtenes-Ladekabel-Samsung-Schwarz/dp/B07DC5PPFV) ||
+| 10 | JST Wire Connector Kit  | 1 | ~7.50 | ~7.50 | [Amazon.de](https://www.amazon.de/Männlich-Weiblich-Adapterkabel-Verbinder-Platinenstecker/dp/B0BZHR5NCR) |This is needed to connect the Pan-Tilt motors to the control board|
+| 11 | 3-Pin Extension Cable  | 1 | ~5.50 | ~5.50 | [Amazon.de](https://www.amazon.de/gp/product/B0F88H5DLC) |This is needed to connect the Pan-Tilt motors to the control board|
  
 ---
  
