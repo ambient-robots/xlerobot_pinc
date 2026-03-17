@@ -60,6 +60,7 @@ The BOM for the grippers can be found [here](https://github.com/pollen-robotics/
 > **Note:** Prices marked with ~ are approximate and may vary. The platform is not included in this price, please check the [Xlerobot](https://xlerobot.readthedocs.io/en/latest/hardware/getting_started/material.html) for that 
  
 
+# How to use it
 ## Quick Start
 One-time setup:
 1. Link this repo into your `lerobot` checkout (see [Link xlerobot_pro into lerobot](#link-xlerobot-into-lerobot)).
