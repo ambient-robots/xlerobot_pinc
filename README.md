@@ -1,5 +1,6 @@
 
-<details Bill of Materials (BOM)>
+<details>
+  <summary> Bill of Materials (BOM)</summary>
   
 ## Servo Motors
  
