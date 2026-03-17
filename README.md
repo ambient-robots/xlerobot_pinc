@@ -1,8 +1,6 @@
 
-<details>
- 
-<summary>Bill of Materials (BOM)</summary>
- 
+<details Bill of Materials (BOM)>
+  
 ## Servo Motors
  
 | # | Component | Qty | Unit Price (€) | Total (€) | Link |
