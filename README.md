@@ -1,3 +1,65 @@
+# Bill of Materials (BOM)
+ 
+## Servo Motors
+ 
+| # | Component | Qty | Unit Price (€) | Total (€) | Link |
+|---|-----------|-----|-----------------|-----------|------|
+| 1 | STS3250 Servo (50kg.cm, 12V) | 6 | ~50.00 | ~300.00 | [AliExpress](https://de.aliexpress.com/item/1005010004108335.html) |
+| 2 | STS3215 Servo (30kg.cm, 12V) | 10 | ~19.00 | ~190.00 | [AliExpress](https://de.aliexpress.com/item/1005009339011602.html) |
+ 
+## [Optional] Motors for Platform  (See [XLerobot](https://xlerobot.readthedocs.io/en/latest/hardware/getting_started/material.html#feature-parts))
+ 
+| # | Component | Qty | Unit Price (€) | Total (€) | Link |
+|---|-----------|-----|-----------------|-----------|------|
+| 3 | STS215 Servo (30kg.cm, 12V) | 3 | ~19.00 | 57.00 | [AliExpress](https://de.aliexpress.com/item/1005009339011602.html) |
+ 
+## Servo Control & Power
+ 
+| # | Component | Qty | Unit Price (€) | Total (€) | Link |
+|---|-----------|-----|-----------------|-----------|------|
+| 4 | Waveshare Serial Bus Servo Driver (12V) | 2 | ~11.00 | ~22.00 | [Amazon.de](https://www.amazon.de/Waveshare-Integrates-Control-Applicable-Integrate/dp/B0CJ6TP3TP) |
+| 5 | 12V Power Supply | 1 | 18.99 | 18.99 | [Amazon.de](https://www.amazon.de/Netzteil-100V-240V-Spannungswandler-Transformator-Stromversorgung/dp/B0FHNWXS27) |
+| 6 | DC Splitter Cable (1-to-2, 90°) | 1 | 10.21 | 10.21 | [Amazon.de](https://www.amazon.de/GINTOOYUN-DC-Splitterkabel-Y-Splitter-Adapter-90-Grad-Stecker-Verlängerungskabel/dp/B09NPXTKYC) |
+ 
+## Vision / Cameras
+ 
+| # | Component | Qty | Unit Price (€) | Total (€) | Link | Comment|
+|---|-----------|-----|-----------------|-----------|------|------|
+| 7 | Intel RealSense D435i Depth Camera | 1 | ~589.00 | ~589.00 | [Amazon.de](https://www.amazon.de/Intel-RealSense-82635D435IDK5P-RealSense-Tiefen-Kamera-D435i/dp/B07MWR2YJB) ||
+| 8 | Fish-Eye Lens Camera Module (168° horizontal FOV, USB-C 3.0, supports 640×480@60 Hz) | 2 | ~100.00 | ~200.00 | [AliExpress Store](https://www.aliexpress.com/store/4588015)/[Taobao (China)](https://item.taobao.com/item.htm?id=785049105422&mi_id=0000e4KUoVlTJSdhkV74JtTjLZJkbENbeQqvv3kuw0gurcw&skuId=5875965485322) |For the fish-eye option, contact the seller on AliExpress if purchasing from Taobao is not possible.|
+ 
+## Cables & Connectors
+ 
+| # | Component | Qty | Unit Price (€) | Total (€) | Link |
+|---|-----------|-----|-----------------|-----------|------|
+| 9 | USB-C to USB-A Cable (Anker, 1.8 m) | 2 | 3.43 | 6.86 | [Amazon.de](https://www.amazon.de/Anker-doppelt-geflochtenes-Ladekabel-Samsung-Schwarz/dp/B07DC5PPFV) |
+| 10 | JST Wire Connector Kit (servo cable extension) | 1 | ~7.50 | ~7.50 | [Amazon.de](https://www.amazon.de/Männlich-Weiblich-Adapterkabel-Verbinder-Platinenstecker/dp/B0BZHR5NCR) |
+| 11 | 3-Pin Extension Cable (servo) | 1 | ~5.50 | ~5.50 | [Amazon.de](https://www.amazon.de/gp/product/B0F88H5DLC) |
+ 
+---
+ 
+
+
+### Grippers 
+
+The BOM for the grippers can be found [here](https://github.com/pollen-robotics/PincOpen?tab=readme-ov-file#bom-bill-of-materials) 
+> **Note:** the Servo and control board are already included in the upper BOM
+
+---
+## Summary
+ 
+| Category | Subtotal (€) |
+|----------|---------------|
+| Servo Motors | ~490.00 |
+| Servo Control & Power | ~51.20 |
+| Vision / Cameras | ~789.00 |
+| Cables & Connectors | ~19.86 |
+|2x[PincOpen Gripper](https://github.com/pollen-robotics/PincOpen?tab=readme-ov-file#bom-bill-of-materials)|~52,92€|
+| **Grand Total** | **~1,402.98** |
+ 
+> **Note:** Prices marked with ~ are approximate and may vary. The platform is not included in this price, please check the [Xlerobot](https://xlerobot.readthedocs.io/en/latest/hardware/getting_started/material.html) for that 
+ 
+
 ## Quick Start
 One-time setup:
 1. Link this repo into your `lerobot` checkout (see [Link xlerobot_pro into lerobot](#link-xlerobot-into-lerobot)).
