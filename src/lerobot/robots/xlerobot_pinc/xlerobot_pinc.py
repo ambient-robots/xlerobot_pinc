@@ -32,20 +32,20 @@ from lerobot.motors.feetech import (
 
 from ..robot import Robot
 from ..utils import ensure_safe_goal_position
-from .config_xlerobot_pro import XLerobotProConfig
+from .config_xlerobot_pinc import XLerobotPincConfig
 
 logger = logging.getLogger(__name__)
 
 
-class XLerobotPro(Robot):
+class XLerobotPinc(Robot):
     """
     The robot includes dual follower arms and a pan-tilt head, with an optional 3-wheel mobile platform.
     """
 
-    config_class = XLerobotProConfig
-    name = "xlerobot_pro"
+    config_class = XLerobotPincConfig
+    name = "xlerobot_pinc"
 
-    def __init__(self, config: XLerobotProConfig):
+    def __init__(self, config: XLerobotPincConfig):
         super().__init__(config)
         self.config = config
         self.has_mobile_platform = config.has_mobile_platform

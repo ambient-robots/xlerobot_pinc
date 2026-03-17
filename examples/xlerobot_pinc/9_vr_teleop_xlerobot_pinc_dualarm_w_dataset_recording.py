@@ -16,7 +16,7 @@ import numpy as np
 
 from lerobot.utils.quadratic_spline_via_ipol import Via, Limits, QuadraticSplineInterpolator
 from lerobot.utils.robot_utils import precise_sleep
-from lerobot.robots.xlerobot_pro import XLerobotProConfig, XLerobotPro
+from lerobot.robots.xlerobot_pinc import XLerobotPincConfig, XLerobotPinc
 from lerobot.utils.visualization_utils import log_rerun_data, init_rerun
 from lerobot.model.kinematics import RobotKinematics
 from lerobot.processor import RobotAction, RobotObservation, RobotProcessorPipeline
@@ -604,10 +604,10 @@ def main():
     print("="*50)
 
     robot, vr_monitor = None, None
-    robot_name = "ambient_xlerobot_pro"
+    robot_name = "ambient_xlerobot_pinc"
     try:
-        robot_config = XLerobotProConfig(id=robot_name, use_degrees=True)
-        robot = XLerobotPro(robot_config)
+        robot_config = XLerobotPincConfig(id=robot_name, use_degrees=True)
+        robot = XLerobotPinc(robot_config)
         robot.connect()
         print("[INIT] Robot connection successful!")
         print(f"[INIT] Motor bus_left_base info: {robot.bus_left_base.motors}")

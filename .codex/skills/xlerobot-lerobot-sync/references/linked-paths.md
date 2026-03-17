@@ -6,7 +6,7 @@
 
 ## Paths currently linked into `lerobot`
 
-- `src/lerobot/robots/xlerobot_pro`
+- `src/lerobot/robots/xlerobot_pinc`
 - `src/lerobot/robots/so107_follower`
 - `src/lerobot/model/kinematics.py`
 - `src/lerobot/utils/quadratic_spline_via_ipol.py`

@@ -13,8 +13,8 @@ Use this skill for hardware-facing setup and debugging tasks. Focus on operator 
 
 1. Read the current operator-facing workflow in `README.md`.
 2. Read `xlerobot_user_config.example.json` and `load_xlerobot_env.sh` together when the task touches runtime config or environment variables.
-3. Read `src/lerobot/robots/xlerobot_pro/config_xlerobot_pro.py` when the task touches required env vars, camera defaults, or config validation.
-4. Read `src/lerobot/robots/xlerobot_pro/xlerobot_pro.py` when the task touches `connect()`, `calibrate()`, `configure()`, `setup_motors()`, or base/no-base behavior.
+3. Read `src/lerobot/robots/xlerobot_pinc/config_xlerobot_pinc.py` when the task touches required env vars, camera defaults, or config validation.
+4. Read `src/lerobot/robots/xlerobot_pinc/xlerobot_pinc.py` when the task touches `connect()`, `calibrate()`, `configure()`, `setup_motors()`, or base/no-base behavior.
 5. Keep the user workflow coherent across docs, JSON template, env loader, and config consumer.
 
 ## Operating Rules
@@ -30,7 +30,7 @@ Use this skill for hardware-facing setup and debugging tasks. Focus on operator 
 ## Validation
 
 - Run `bash -n load_xlerobot_env.sh`.
-- If Python config code changed, run `python -m compileall src examples/xlerobot_pro`.
+- If Python config code changed, run `python -m compileall src examples/xlerobot_pinc`.
 - Grep for touched env vars to ensure docs and examples stay aligned.
 
 ## References

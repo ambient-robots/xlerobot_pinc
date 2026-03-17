@@ -12,7 +12,7 @@ Use this skill when the task is about integrating this repo with an external `le
 ## Workflow
 
 1. Read `setup_lerobot_symlinks.sh`.
-2. Read the "Link xlerobot_pro into lerobot" section in `README.md`.
+2. Read the "Link xlerobot_pinc into lerobot" section in `README.md`.
 3. Confirm which source paths are intentionally linked and which are intentionally left local.
 4. If the task changes linked content, update both the script and the documentation together.
 5. Prefer verifying the resulting symlinks over assuming the script is correct.

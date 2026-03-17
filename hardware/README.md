@@ -1,10 +1,10 @@
 # Hardware
 
-This folder documents the physical hardware lineage of `xlerobot_pro` and points to the upstream sources for printable parts.
+This folder documents the physical hardware lineage of `xlerobot_pinc` and points to the upstream sources for printable parts.
 
 ## Hardware lineage
 
-`xlerobot_pro` is extended from [XLeRobot](https://github.com/Vector-Wangel/XLeRobot). Relative to that upstream platform, this repo is centered on:
+`xlerobot_pinc` is extended from [XLeRobot](https://github.com/Vector-Wangel/XLeRobot). Relative to that upstream platform, this repo is centered on:
 
 - an arm setup upgraded to an SO107-style 6-DoF arm
 - a gripper based on [PincOpen](https://github.com/pollen-robotics/PincOpen)

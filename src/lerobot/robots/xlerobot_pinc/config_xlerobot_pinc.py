@@ -141,9 +141,9 @@ def xlerobot_cameras_config() -> dict[str, CameraConfig]:
     }
 
 
-@RobotConfig.register_subclass("xlerobot_pro")
+@RobotConfig.register_subclass("xlerobot_pinc")
 @dataclass
-class XLerobotProConfig(RobotConfig):
+class XLerobotPincConfig(RobotConfig):
     # Whether this setup includes the 3-DoF omni mobile platform.
     has_mobile_platform: bool | None = None
 
@@ -185,6 +185,6 @@ class XLerobotProConfig(RobotConfig):
 
         if self.has_mobile_platform is None:
             raise ValueError(
-                "Missing 'has_mobile_platform'. Set it explicitly in XLerobotProConfig(...) "
+                "Missing 'has_mobile_platform'. Set it explicitly in XLerobotPincConfig(...) "
                 "or export XLEROBOT_HAS_MOBILE_PLATFORM."
             )

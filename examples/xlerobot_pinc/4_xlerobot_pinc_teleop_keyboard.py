@@ -8,7 +8,7 @@ import numpy as np
 
 from lerobot.utils.quadratic_spline_via_ipol import Via, Limits, QuadraticSplineInterpolator
 from lerobot.utils.robot_utils import precise_sleep
-from lerobot.robots.xlerobot_pro import XLerobotProConfig, XLerobotPro
+from lerobot.robots.xlerobot_pinc import XLerobotPincConfig, XLerobotPinc
 from lerobot.utils.visualization_utils import log_rerun_data, init_rerun
 from lerobot.model.kinematics import RobotKinematics
 from lerobot.processor import RobotAction, RobotObservation, RobotProcessorPipeline
@@ -573,13 +573,13 @@ def move_to_target_full_body_with_ipol(
     
 
 def main():
-    robot_name = "ambient_xlerobot_pro"
+    robot_name = "ambient_xlerobot_pinc"
     try:
-        robot_config = XLerobotProConfig(
+        robot_config = XLerobotPincConfig(
             id=robot_name,
             use_degrees=True,
         )
-        robot = XLerobotPro(robot_config)
+        robot = XLerobotPinc(robot_config)
         robot.connect()
         print("[MAIN] Robot connection successful!")
         print(f"[MAIN] Motor bus_left_base info: {robot.bus_left_base.motors}")
@@ -613,7 +613,7 @@ def main():
     head_teleop = SimpleHeadControl(HEAD_JOINT_MAP)
 
     if LOG_RERUN: 
-        init_rerun(session_name="ambient_xlerobot_pro_keyboard_teleop")
+        init_rerun(session_name="ambient_xlerobot_pinc_keyboard_teleop")
 
     move_to_target_full_body_with_ipol(robot, left_arm_teleop, right_arm_teleop, head_teleop, 
                                        target_positions=FULL_START_POS)

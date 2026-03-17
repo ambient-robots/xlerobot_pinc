@@ -1,12 +1,12 @@
 # Hardware Sources
 
-This document lists the upstream sources for the physical build assets referenced by `xlerobot_pro`.
+This document lists the upstream sources for the physical build assets referenced by `xlerobot_pinc`.
 
 ## XLeRobot
 
 Upstream repository: [Vector-Wangel/XLeRobot](https://github.com/Vector-Wangel/XLeRobot)
 
-`xlerobot_pro` is extended from `XLeRobot`. Users should obtain the relevant base hardware and printable assets from the upstream repository, especially its hardware-related areas such as:
+`xlerobot_pinc` is extended from `XLeRobot`. Users should obtain the relevant base hardware and printable assets from the upstream repository, especially its hardware-related areas such as:
 
 - `hardware/`
 - `stl/` when present in the upstream documentation or repository layout
@@ -17,7 +17,7 @@ Upstream repository: [pollen-robotics/PincOpen](https://github.com/pollen-roboti
 
 The gripper used in this repo is based on `PincOpen`. Users should obtain the gripper CAD and print assets from the upstream project, especially its `cad/` area and related build documentation.
 
-## xlerobot_pro-specific changes
+## xlerobot_pinc-specific changes
 
 At a conceptual level, this repo differs from the upstream hardware stack by:
 

@@ -12,7 +12,7 @@ import numpy as np
 
 from lerobot.utils.quadratic_spline_via_ipol import Via, Limits, QuadraticSplineInterpolator
 from lerobot.utils.robot_utils import precise_sleep
-from lerobot.robots.xlerobot_pro import XLerobotProConfig, XLerobotPro
+from lerobot.robots.xlerobot_pinc import XLerobotPincConfig, XLerobotPinc
 
 from openpi_client import image_tools
 from openpi_client import websocket_client_policy
@@ -262,10 +262,10 @@ def main():
     print("="*50)
 
     robot = None
-    robot_name = "ambient_xlerobot_pro"
+    robot_name = "ambient_xlerobot_pinc"
     try:
-        robot_config = XLerobotProConfig(id=robot_name, use_degrees=True)
-        robot = XLerobotPro(robot_config)
+        robot_config = XLerobotPincConfig(id=robot_name, use_degrees=True)
+        robot = XLerobotPinc(robot_config)
         robot.connect()
 
         #Init the keyboard instance
