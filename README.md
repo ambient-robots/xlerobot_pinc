@@ -1,7 +1,5 @@
 <p align="center">
-  <img src="assets/logo_placeholder.png" alt="XLeRobot Pinc" width="400"/>
-  <br/>
-  <em>Replace this with your logo</em>
+  <img src="assets/XLerobot_pinc.svg" alt="XLeRobot Pinc" width="400"/>
 </p>
 
 <p align="center">
