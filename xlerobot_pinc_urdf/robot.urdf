@@ -298,21 +298,21 @@
       <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
     </inertial>
   </link>
-  <!-- Link interface_arm100 -->
-  <link name="interface_arm100">
+  <!-- Link gripper_frame_link -->
+  <link name="gripper_frame_link">
     <inertial>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <mass value="1e-09"/>
       <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
     </inertial>
   </link>
-  <!-- Joint from wrist_roll_pitch_so101_v2 to interface_arm100 -->
+  <!-- Joint from gripper_interface_link to gripper_frame_link -->
   <joint name="gripper_interface" type="fixed">
-    <origin xyz="0.0 0.0 0.0" rpy="0 3.14159 0"/>
+    <origin xyz="0 0 -0.123609" rpy="0 1.5708 0"/>
     <parent link="gripper_interface_link"/>
-    <child link="interface_arm100"/>
+    <child link="gripper_frame_link"/>
   </joint>
-  <!-- Joint from wrist_roll_pitch_so101_v2 to interface_arm100 -->
+  <!-- Joint from wrist_roll_pitch_so101_v2 to gripper_interface_link -->
   <joint name="wrist_roll" type="revolute">
     <origin xyz="0.0 -0.0626 0.0201" rpy="1.5708 0.0 3.14159"/>
     <parent link="wrist_roll_pitch_so101_v2"/>
