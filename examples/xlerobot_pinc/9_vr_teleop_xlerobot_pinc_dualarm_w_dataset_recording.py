@@ -43,7 +43,7 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     force=True)
 logger = logging.getLogger(__name__)
-URDF_PATH = os.getenv("XLEROBOT_URDF_PATH", "/home/that/xlerobot_pinc_urdf/robot.urdf")
+URDF_PATH = os.environ["XLEROBOT_URDF_PATH"]
 
 # Joint mapping configurations
 LEFT_JOINT_MAP = {

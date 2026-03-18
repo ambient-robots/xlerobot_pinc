@@ -222,12 +222,12 @@ Create your local config from the template:
 cp xlerobot_user_config.example.json xlerobot_user_config.json
 ```
 
-Edit `xlerobot_user_config.json` with your camera paths/serials and platform settings. The `urdf_path` should point to the bundled URDF:
+Edit `xlerobot_user_config.json` with your camera paths/serials and platform settings. Leave `urdf_path` empty to use the bundled `xlerobot_pinc_urdf/robot.urdf`, or set it to a custom URDF file or directory:
 
 ```json
 {
   "has_mobile_platform": false,
-  "urdf_path": "/absolute/path/to/xlerobot_pinc/xlerobot_pinc_urdf",
+  "urdf_path": "",
   "cameras": {
     "left_wrist": { "index_or_path": "/dev/videoX", "fps": 60, "width": 640, "height": 480, "fourcc": "YUYV" },
     "right_wrist": { "index_or_path": "/dev/videoY", "fps": 60, "width": 640, "height": 480, "fourcc": "YUYV" },

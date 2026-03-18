@@ -16,13 +16,16 @@ if [[ ! -f "${CONFIG_PATH}" ]]; then
 fi
 
 if ! EXPORT_LINES="$(
-python - "${CONFIG_PATH}" <<'PY'
+python - "${CONFIG_PATH}" "${SCRIPT_DIR}" <<'PY'
 import json
 import shlex
 import sys
 from pathlib import Path
 
 config_path = Path(sys.argv[1])
+script_dir = Path(sys.argv[2]).resolve()
+bundled_urdf_path = script_dir / "xlerobot_pinc_urdf" / "robot.urdf"
+
 with config_path.open("r", encoding="utf-8") as f:
     cfg = json.load(f)
 
@@ -33,15 +36,30 @@ has_mobile_platform = cfg["has_mobile_platform"]
 if not isinstance(has_mobile_platform, bool):
     raise SystemExit("has_mobile_platform must be a JSON boolean (true/false)")
 
-if "urdf_path" not in cfg:
-    raise SystemExit("Missing required key: urdf_path")
+urdf_path = cfg.get("urdf_path")
+if urdf_path is None:
+    resolved_urdf_path = bundled_urdf_path
+else:
+    if not isinstance(urdf_path, str):
+        raise SystemExit("urdf_path must be a JSON string when provided")
 
-urdf_path = cfg["urdf_path"]
-if not isinstance(urdf_path, str) or not urdf_path.strip():
-    raise SystemExit("urdf_path must be a non-empty JSON string")
+    urdf_path = urdf_path.strip()
+    if not urdf_path:
+        resolved_urdf_path = bundled_urdf_path
+    else:
+        resolved_urdf_path = Path(urdf_path).expanduser()
+        if not resolved_urdf_path.is_absolute():
+            resolved_urdf_path = (config_path.parent / resolved_urdf_path).resolve()
+        if resolved_urdf_path.suffix.lower() != ".urdf":
+            resolved_urdf_path = resolved_urdf_path / "robot.urdf"
+
+if not resolved_urdf_path.is_file():
+    raise SystemExit(
+        f"Resolved URDF path does not exist or is not a file: {resolved_urdf_path}"
+    )
 
 print(f"export XLEROBOT_HAS_MOBILE_PLATFORM={'1' if has_mobile_platform else '0'}")
-print(f"export XLEROBOT_URDF_PATH={shlex.quote(urdf_path)}")
+print(f"export XLEROBOT_URDF_PATH={shlex.quote(str(resolved_urdf_path))}")
 
 if "cameras" not in cfg:
     raise SystemExit("Missing required key: cameras")

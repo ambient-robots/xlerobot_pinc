@@ -1,6 +1,6 @@
 {
   "has_mobile_platform": false,
-  "urdf_path": "/absolute/path/to/xlerobot_pinc/xlerobot_pinc_urdf",
+  "urdf_path": "",
   "cameras": {
     "left_wrist": {
       "index_or_path": "/dev/videoX or /dev/v4l/by-path/platform-XXXX-left-video-index0",
