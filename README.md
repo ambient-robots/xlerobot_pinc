@@ -52,7 +52,13 @@ xlerobot_pinc/
 
 This platform extends [XLeRobot](https://github.com/Vector-Wangel/XLeRobot) with SO107-style 6-DoF arms and [PincOpen](https://github.com/pollen-robotics/PincOpen) grippers. See [hardware/README.md](hardware/README.md) for detailed hardware lineage and [hardware/SOURCES.md](hardware/SOURCES.md) for upstream print file locations.
 
-The URDF model is bundled in [`xlerobot_pinc_urdf/`](xlerobot_pinc_urdf/) and can be referenced directly via the `urdf_path` config key.
+The URDF models are bundled in [`xlerobot_pinc_urdf/`](xlerobot_pinc_urdf/) and can be referenced via the `urdf_path` config key:
+
+- **`robot.urdf`** — single arm (6-DOF), used for inverse kinematics
+- **`gripper.urdf`** — PincOpen end-effector (1-DOF cam)
+- **`xlerobot.urdf`** — mobile base platform with dual arm mounts
+
+All three are assembled together for full robot visualization; only `robot.urdf` is used for IK. Run `gen_local_paths.sh` inside the URDF directory to generate local-path variants.
 
 <details>
 <summary>Bill of Materials (BOM)</summary>

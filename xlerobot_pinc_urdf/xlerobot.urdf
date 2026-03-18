@@ -1,0 +1,161 @@
+<?xml version="1.0" ?>
+<!-- Generated using onshape-to-robot -->
+<!-- Onshape https://cad.onshape.com/documents/96925cf817c1a878a85e838a/w/65e84f84222e56821484522f/e/8df6a6c93d54b1b95e807d87 -->
+<robot name="urdf_xlerobot">
+  <link name="base">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link 035armbase_step -->
+  <link name="035armbase_step">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part 035armbase_step -->
+    <visual>
+      <origin xyz="0.101856 -0.00509356 -0.665853" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/035armbase_step.stl"/>
+      </geometry>
+      <material name="035armbase_step_material">
+        <color rgba="0.627451 0.627451 0.643137 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.101856 -0.00509356 -0.665853" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/035armbase_step.stl"/>
+      </geometry>
+    </collision>
+    <!-- Part gimbal_base_step -->
+    <visual>
+      <origin xyz="0.103377 -0.00438476 -0.668057" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/gimbal_base_step.stl"/>
+      </geometry>
+      <material name="gimbal_base_step_material">
+        <color rgba="0.627451 0.627451 0.627451 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.103377 -0.00438476 -0.668057" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/gimbal_base_step.stl"/>
+      </geometry>
+    </collision>
+    <!-- Part xlerobot_0_2_9_3d_step -->
+    <visual>
+      <origin xyz="0.103187 -0.00463072 -0.665881" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/xlerobot_0_2_9_3d_step.stl"/>
+      </geometry>
+      <material name="xlerobot_0_2_9_3d_step_material">
+        <color rgba="0.301961 0.301961 0.301961 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.103187 -0.00463072 -0.665881" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/xlerobot_0_2_9_3d_step.stl"/>
+      </geometry>
+    </collision>
+    <!-- Part 035armbase_step_2 -->
+    <visual>
+      <origin xyz="0.101856 -0.00509356 -0.665853" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/035armbase_step__2.stl"/>
+      </geometry>
+      <material name="035armbase_step_2_material">
+        <color rgba="0.627451 0.627451 0.643137 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.101856 -0.00509356 -0.665853" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/035armbase_step__2.stl"/>
+      </geometry>
+    </collision>
+    <!-- Part 035armbase_step_3 -->
+    <visual>
+      <origin xyz="0.101856 -0.00519356 -0.665853" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/035armbase_step__3.stl"/>
+      </geometry>
+      <material name="035armbase_step_3_material">
+        <color rgba="0.627451 0.627451 0.643137 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.101856 -0.00519356 -0.665853" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/035armbase_step__3.stl"/>
+      </geometry>
+    </collision>
+    <!-- Part 035armbase_step_4 -->
+    <visual>
+      <origin xyz="0.101856 -0.00509356 -0.665853" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/035armbase_step__4.stl"/>
+      </geometry>
+      <material name="035armbase_step_4_material">
+        <color rgba="0.627451 0.627451 0.643137 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.101856 -0.00509356 -0.665853" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/035armbase_step__4.stl"/>
+      </geometry>
+    </collision>
+    <!-- Part xlerobot_0_2_9bas_step -->
+    <visual>
+      <origin xyz="0.101856 -0.00509356 -0.665853" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/xlerobot_0_2_9bas_step.stl"/>
+      </geometry>
+      <material name="xlerobot_0_2_9bas_step_material">
+        <color rgba="0.494118 0.494118 0.494118 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.101856 -0.00509356 -0.665853" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/xlerobot_0_2_9bas_step.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="so107_right_base">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <link name="so107_left_base">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <joint name="base_fixed" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="0 0 3.14159" />
+    <parent link="base" />
+    <child link="035armbase_step" />
+  </joint>
+  <joint name="so107_left" type="fixed">
+    <origin xyz="0.0253929 -0.136894 0.0803879" rpy="0 0 3.14159"/>
+    <parent link="035armbase_step" />
+    <child link="so107_left_base" />
+  </joint>
+  <joint name="so107_right" type="fixed">
+    <origin xyz="0.0253929 0.136206 0.0803879" rpy="0 0 3.14159"/>
+    <parent link="035armbase_step" />
+    <child link="so107_right_base" />
+  </joint> 
+</robot>

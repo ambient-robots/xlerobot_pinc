@@ -290,6 +290,14 @@
       </geometry>
     </collision>
   </link>
+  <!-- Link gripper_interface_link -->
+  <link name="gripper_interface_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
   <!-- Link interface_arm100 -->
   <link name="interface_arm100">
     <inertial>
@@ -297,450 +305,25 @@
       <mass value="1e-09"/>
       <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
     </inertial>
-    <!-- Part sts3215_03a_v1_7 -->
-    <visual>
-      <origin xyz="0.0231 2.4503e-17 -0.0330626" rpy="3.14159 1.5708 0"/>
-      <geometry>
-        <mesh filename="package://assets/sts3215_03a_v1__3.stl"/>
-      </geometry>
-      <material name="sts3215_03a_v1_7_material">
-        <color rgba="0.627451 0.627451 0.627451 1"/>
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="0.0231 2.4503e-17 -0.0330626" rpy="3.14159 1.5708 0"/>
-      <geometry>
-        <mesh filename="package://assets/sts3215_03a_v1__3.stl"/>
-      </geometry>
-    </collision>
-    <!-- Part bottom_plate -->
-    <visual>
-      <origin xyz="0 1.01915e-17 -0.063609" rpy="6.12323e-17 1.5708 0"/>
-      <geometry>
-        <mesh filename="package://assets/bottom_plate.stl"/>
-      </geometry>
-      <material name="bottom_plate_material">
-        <color rgba="0.901961 0.901961 0.901961 1"/>
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="0 1.01915e-17 -0.063609" rpy="6.12323e-17 1.5708 0"/>
-      <geometry>
-        <mesh filename="package://assets/bottom_plate.stl"/>
-      </geometry>
-    </collision>
-    <!-- Part top_plate -->
-    <visual>
-      <origin xyz="5.55112e-17 6.72205e-18 -0.063609" rpy="-8.26946e-16 1.5708 0"/>
-      <geometry>
-        <mesh filename="package://assets/top_plate.stl"/>
-      </geometry>
-      <material name="top_plate_material">
-        <color rgba="0.901961 0.901961 0.901961 1"/>
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="5.55112e-17 6.72205e-18 -0.063609" rpy="-8.26946e-16 1.5708 0"/>
-      <geometry>
-        <mesh filename="package://assets/top_plate.stl"/>
-      </geometry>
-    </collision>
-    <!-- Part camera_basement -->
-    <visual>
-      <origin xyz="2.77556e-17 6.72205e-18 -0.063609" rpy="-8.26946e-16 1.5708 0"/>
-      <geometry>
-        <mesh filename="package://assets/camera_basement.stl"/>
-      </geometry>
-      <material name="camera_basement_material">
-        <color rgba="0.231373 0.380392 0.705882 1"/>
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="2.77556e-17 6.72205e-18 -0.063609" rpy="-8.26946e-16 1.5708 0"/>
-      <geometry>
-        <mesh filename="package://assets/camera_basement.stl"/>
-      </geometry>
-    </collision>
-    <!-- Part camera_mobile_sup -->
-    <visual>
-      <origin xyz="0.060363 0.0002 0.0821203" rpy="-3.14159 -0.785398 -5.70839e-16"/>
-      <geometry>
-        <mesh filename="package://assets/camera_mobile_sup.stl"/>
-      </geometry>
-      <material name="camera_mobile_sup_material">
-        <color rgba="0.917647 0.917647 0.917647 1"/>
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="0.060363 0.0002 0.0821203" rpy="-3.14159 -0.785398 -5.70839e-16"/>
-      <geometry>
-        <mesh filename="package://assets/camera_mobile_sup.stl"/>
-      </geometry>
-    </collision>
-    <!-- Part interface_arm100 -->
-    <visual>
-      <origin xyz="2.77556e-17 -2.1684e-19 -0.063609" rpy="6.12323e-17 1.5708 0"/>
-      <geometry>
-        <mesh filename="package://assets/interface_arm100.stl"/>
-      </geometry>
-      <material name="interface_arm100_material">
-        <color rgba="0.901961 0.901961 0.901961 1"/>
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="2.77556e-17 -2.1684e-19 -0.063609" rpy="6.12323e-17 1.5708 0"/>
-      <geometry>
-        <mesh filename="package://assets/interface_arm100.stl"/>
-      </geometry>
-    </collision>
   </link>
-  <!-- Frame gripper_frame (dummy link + fixed joint) -->
-  <link name="gripper_frame_link">
-    <origin xyz="0 0 0" rpy="0 -0 0"/>
-    <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <mass value="1e-9"/>
-      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
-    </inertial>
-  </link>
-  <joint name="gripper_frame_fixed_joint" type="fixed">
-    <origin xyz="2.77556e-17 -2.1684e-19 -0.123609" rpy="6.12323e-17 1.5708 0"/>
-    <parent link="interface_arm100"/>
-    <child link="gripper_frame_link"/>
-    <axis xyz="0 0 0"/>
-  </joint>
-  <!-- Link internal_rod -->
-  <link name="internal_rod">
-    <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <mass value="1e-09"/>
-      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
-    </inertial>
-    <!-- Part internal_rod -->
-    <visual>
-      <origin xyz="-5.55112e-17 0.0325 0.008" rpy="-3.87944e-26 1.48625e-24 2.68045e-17"/>
-      <geometry>
-        <mesh filename="package://assets/internal_rod.stl"/>
-      </geometry>
-      <material name="internal_rod_material">
-        <color rgba="0.901961 0.901961 0.901961 1"/>
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="-5.55112e-17 0.0325 0.008" rpy="-3.87944e-26 1.48625e-24 2.68045e-17"/>
-      <geometry>
-        <mesh filename="package://assets/internal_rod.stl"/>
-      </geometry>
-    </collision>
-  </link>
-  <!-- Joint from interface_arm100 to internal_rod -->
-  <joint name="Revolute 7" type="fixed">
-    <origin xyz="-0.0088 -0.0325 -0.063609" rpy="-1.5708 1.27489 -1.5708"/>
-    <parent link="interface_arm100"/>
-    <child link="internal_rod"/>
-    <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
-  </joint>
-  <!-- Link external_rod -->
-  <link name="external_rod">
-    <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <mass value="1e-09"/>
-      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
-    </inertial>
-    <!-- Part external_rod -->
-    <visual>
-      <origin xyz="2.77556e-17 0.044 -0.004" rpy="-1.15988e-24 2.30841e-24 -2.90443e-17"/>
-      <geometry>
-        <mesh filename="package://assets/external_rod.stl"/>
-      </geometry>
-      <material name="external_rod_material">
-        <color rgba="0.901961 0.901961 0.901961 1"/>
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="2.77556e-17 0.044 -0.004" rpy="-1.15988e-24 2.30841e-24 -2.90443e-17"/>
-      <geometry>
-        <mesh filename="package://assets/external_rod.stl"/>
-      </geometry>
-    </collision>
-  </link>
-  <!-- Link distal_shell -->
-  <link name="distal_shell">
-    <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <mass value="1e-09"/>
-      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
-    </inertial>
-    <!-- Part removable_tip -->
-    <visual>
-      <origin xyz="-0.034641 0.024 -0.0049" rpy="2.22045e-16 -3.34777e-16 1.11936e-25"/>
-      <geometry>
-        <mesh filename="package://assets/removable_tip.stl"/>
-      </geometry>
-      <material name="removable_tip_material">
-        <color rgba="0.901961 0.901961 0.901961 1"/>
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="-0.034641 0.024 -0.0049" rpy="2.22045e-16 -3.34777e-16 1.11936e-25"/>
-      <geometry>
-        <mesh filename="package://assets/removable_tip.stl"/>
-      </geometry>
-    </collision>
-    <!-- Part distal_rod -->
-    <visual>
-      <origin xyz="-0.034641 0.024 -0.0048" rpy="5.40089e-25 7.43447e-25 -7.53612e-25"/>
-      <geometry>
-        <mesh filename="package://assets/distal_rod.stl"/>
-      </geometry>
-      <material name="distal_rod_material">
-        <color rgba="0.901961 0.901961 0.901961 1"/>
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="-0.034641 0.024 -0.0048" rpy="5.40089e-25 7.43447e-25 -7.53612e-25"/>
-      <geometry>
-        <mesh filename="package://assets/distal_rod.stl"/>
-      </geometry>
-    </collision>
-    <!-- Part pointy_tip_support -->
-    <visual>
-      <origin xyz="-0.0346303 0.02375 -0.0049" rpy="-4.44089e-16 -2.78697e-16 5.60793e-17"/>
-      <geometry>
-        <mesh filename="package://assets/pointy_tip_support.stl"/>
-      </geometry>
-      <material name="pointy_tip_support_material">
-        <color rgba="0.647059 0.647059 0.647059 1"/>
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="-0.0346303 0.02375 -0.0049" rpy="-4.44089e-16 -2.78697e-16 5.60793e-17"/>
-      <geometry>
-        <mesh filename="package://assets/pointy_tip_support.stl"/>
-      </geometry>
-    </collision>
-    <!-- Part distal_shell -->
-    <visual>
-      <origin xyz="-0.034641 0.024 -0.0051" rpy="2.22045e-16 -3.3475e-16 6.72905e-24"/>
-      <geometry>
-        <mesh filename="package://assets/distal_shell.stl"/>
-      </geometry>
-      <material name="distal_shell_material">
-        <color rgba="0.901961 0.901961 0.901961 1"/>
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="-0.034641 0.024 -0.0051" rpy="2.22045e-16 -3.3475e-16 6.72905e-24"/>
-      <geometry>
-        <mesh filename="package://assets/distal_shell.stl"/>
-      </geometry>
-    </collision>
-  </link>
-  <!-- Joint from external_rod to distal_shell -->
-  <joint name="Revolute 9" type="fixed">
-    <origin xyz="0.034641 0.02 -0.008" rpy="-3.14159 5.60794e-17 0.751294"/>
-    <parent link="external_rod"/>
-    <child link="distal_shell"/>
-    <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
-  </joint>
-  <!-- Joint from interface_arm100 to external_rod -->
-  <joint name="Revolute 8" type="fixed">
-    <origin xyz="-0.0042 -0.044 -0.063609" rpy="-1.5708 0.819502 1.5708"/>
-    <parent link="interface_arm100"/>
-    <child link="external_rod"/>
-    <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
-  </joint>
-  <!-- Link internal_rod_2 -->
-  <link name="internal_rod_2">
-    <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <mass value="1e-09"/>
-      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
-    </inertial>
-    <!-- Part internal_rod_2 -->
-    <visual>
-      <origin xyz="0 0.0325 -0.008" rpy="1.83078e-24 -4.24704e-26 -6.94757e-18"/>
-      <geometry>
-        <mesh filename="package://assets/internal_rod.stl"/>
-      </geometry>
-      <material name="internal_rod_2_material">
-        <color rgba="0.901961 0.901961 0.901961 1"/>
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="0 0.0325 -0.008" rpy="1.83078e-24 -4.24704e-26 -6.94757e-18"/>
-      <geometry>
-        <mesh filename="package://assets/internal_rod.stl"/>
-      </geometry>
-    </collision>
-  </link>
-  <!-- Joint from interface_arm100 to internal_rod_2 -->
-  <joint name="Revolute 14" type="fixed">
-    <origin xyz="-0.0088 0.0325 -0.063609" rpy="-1.5708 1.12911 1.5708"/>
-    <parent link="interface_arm100"/>
-    <child link="internal_rod_2"/>
-    <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
-  </joint>
-  <!-- Link external_rod_2 -->
-  <link name="external_rod_2">
-    <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <mass value="1e-09"/>
-      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
-    </inertial>
-    <!-- Part external_rod_2 -->
-    <visual>
-      <origin xyz="0 0.044 -0.004" rpy="5.48982e-26 -2.12352e-25 -1.01668e-17"/>
-      <geometry>
-        <mesh filename="package://assets/external_rod.stl"/>
-      </geometry>
-      <material name="external_rod_2_material">
-        <color rgba="0.901961 0.901961 0.901961 1"/>
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="0 0.044 -0.004" rpy="5.48982e-26 -2.12352e-25 -1.01668e-17"/>
-      <geometry>
-        <mesh filename="package://assets/external_rod.stl"/>
-      </geometry>
-    </collision>
-  </link>
-  <!-- Link distal_shell_2 -->
-  <link name="distal_shell_2">
-    <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <mass value="1e-09"/>
-      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
-    </inertial>
-    <!-- Part pointy_tip_support_2 -->
-    <visual>
-      <origin xyz="-0.0346303 0.02375 0.0049" rpy="-2.76863e-24 -1.66578e-16 1.04083e-17"/>
-      <geometry>
-        <mesh filename="package://assets/pointy_tip_support.stl"/>
-      </geometry>
-      <material name="pointy_tip_support_2_material">
-        <color rgba="0.647059 0.647059 0.647059 1"/>
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="-0.0346303 0.02375 0.0049" rpy="-2.76863e-24 -1.66578e-16 1.04083e-17"/>
-      <geometry>
-        <mesh filename="package://assets/pointy_tip_support.stl"/>
-      </geometry>
-    </collision>
-    <!-- Part distal_rod_2 -->
-    <visual>
-      <origin xyz="-0.034641 0.024 0.0048" rpy="5.40089e-25 -7.43447e-25 2.36377e-24"/>
-      <geometry>
-        <mesh filename="package://assets/distal_rod.stl"/>
-      </geometry>
-      <material name="distal_rod_2_material">
-        <color rgba="0.901961 0.901961 0.901961 1"/>
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="-0.034641 0.024 0.0048" rpy="5.40089e-25 -7.43447e-25 2.36377e-24"/>
-      <geometry>
-        <mesh filename="package://assets/distal_rod.stl"/>
-      </geometry>
-    </collision>
-    <!-- Part distal_shell_2 -->
-    <visual>
-      <origin xyz="-0.034641 0.024 0.0051" rpy="5.40089e-25 -1.89597e-20 3.46945e-18"/>
-      <geometry>
-        <mesh filename="package://assets/distal_shell.stl"/>
-      </geometry>
-      <material name="distal_shell_2_material">
-        <color rgba="0.901961 0.901961 0.901961 1"/>
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="-0.034641 0.024 0.0051" rpy="5.40089e-25 -1.89597e-20 3.46945e-18"/>
-      <geometry>
-        <mesh filename="package://assets/distal_shell.stl"/>
-      </geometry>
-    </collision>
-    <!-- Part removable_tip_2 -->
-    <visual>
-      <origin xyz="-0.034641 0.024 0.0049" rpy="1.54293e-23 -1.54999e-15 -6.60062e-16"/>
-      <geometry>
-        <mesh filename="package://assets/removable_tip.stl"/>
-      </geometry>
-      <material name="removable_tip_2_material">
-        <color rgba="0.901961 0.901961 0.901961 1"/>
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="-0.034641 0.024 0.0049" rpy="1.54293e-23 -1.54999e-15 -6.60062e-16"/>
-      <geometry>
-        <mesh filename="package://assets/removable_tip.stl"/>
-      </geometry>
-    </collision>
-  </link>
-  <!-- Joint from external_rod_2 to distal_shell_2 -->
-  <joint name="Revolute 16" type="fixed">
-    <origin xyz="0.034641 0.02 -0.008" rpy="1.11022e-15 -1.1989e-23 0.441689"/>
-    <parent link="external_rod_2"/>
-    <child link="distal_shell_2"/>
-    <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
-  </joint>
-  <!-- Joint from interface_arm100 to external_rod_2 -->
-  <joint name="Revolute 15" type="fixed">
-    <origin xyz="-0.0042 0.044 -0.063609" rpy="-1.5708 1.12911 1.5708"/>
-    <parent link="interface_arm100"/>
-    <child link="external_rod_2"/>
-    <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
-  </joint>
-  <!-- Link cam -->
-  <link name="cam">
-    <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <mass value="1e-09"/>
-      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
-    </inertial>
-    <!-- Part cam -->
-    <visual>
-      <origin xyz="-0.0025159 -0.0178661 -0.00415" rpy="-3.33953e-25 -4.7303e-24 -1.7107"/>
-      <geometry>
-        <mesh filename="package://assets/cam.stl"/>
-      </geometry>
-      <material name="cam_material">
-        <color rgba="0.901961 0.901961 0.901961 1"/>
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="-0.0025159 -0.0178661 -0.00415" rpy="-3.33953e-25 -4.7303e-24 -1.7107"/>
-      <geometry>
-        <mesh filename="package://assets/cam.stl"/>
-      </geometry>
-    </collision>
-  </link>
-  <!-- Joint from interface_arm100 to cam -->
-  <joint name="gripper" type="revolute">
-    <origin xyz="0.0029 1.4962e-17 -0.0455626" rpy="-8.26946e-16 1.5708 0"/>
-    <parent link="interface_arm100"/>
-    <child link="cam"/>
-    <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="2" lower="-3.141592653589793" upper="3.141592653589793"/>
+  <!-- Joint from wrist_roll_pitch_so101_v2 to interface_arm100 -->
+  <joint name="gripper_interface" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="0 3.14159 0"/>
+    <parent link="gripper_interface_link"/>
+    <child link="interface_arm100"/>
   </joint>
   <!-- Joint from wrist_roll_pitch_so101_v2 to interface_arm100 -->
   <joint name="wrist_roll" type="revolute">
-    <origin xyz="-2.77556e-17 -0.0626 0.0201" rpy="1.5708 -1.10148e-13 3.14159"/>
+    <origin xyz="0.0 -0.0626 0.0201" rpy="1.5708 0.0 3.14159"/>
     <parent link="wrist_roll_pitch_so101_v2"/>
-    <child link="interface_arm100"/>
+    <child link="gripper_interface_link"/>
     <axis xyz="0 0 1"/>
     <!-- -180deg <= q <= 180deg -->
     <limit effort="10" velocity="2" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Joint from component1___use to wrist_roll_pitch_so101_v2 -->
   <joint name="wrist_flex" type="revolute">
-    <origin xyz="-0.00498613 0.0198678 -0.0728416" rpy="1.5708 6.37128e-14 -4.4409e-16"/>
+    <origin xyz="-0.00498613 0.0198678 -0.0728416" rpy="1.5708 0.0 0.0"/>
     <parent link="component1___use"/>
     <child link="wrist_roll_pitch_so101_v2"/>
     <axis xyz="0 0 1"/>
@@ -749,7 +332,7 @@
   </joint>
   <!-- Joint from sts3215_03a_v1 to component1___use -->
   <joint name="elbow_roll" type="revolute">
-    <origin xyz="-0.0626 3.33067e-16 0.0201" rpy="-1.5708 -2.80973e-14 -1.5708"/>
+    <origin xyz="-0.0626 0.0 0.0201" rpy="-1.5708 0.0 -1.5708"/>
     <parent link="sts3215_03a_v1"/>
     <child link="component1___use"/>
     <axis xyz="0 0 1"/>
@@ -758,7 +341,7 @@
   </joint>
   <!-- Joint from upper_arm_so101_v1 to sts3215_03a_v1 -->
   <joint name="elbow_flex" type="revolute">
-    <origin xyz="-0.112485 -0.028 0.0016" rpy="-4.39313e-16 1.9016e-16 1.5708"/>
+    <origin xyz="-0.112485 -0.028 0.0016" rpy="0.0 0.0 1.5708"/>
     <parent link="upper_arm_so101_v1"/>
     <child link="sts3215_03a_v1"/>
     <axis xyz="0 0 1"/>
@@ -776,7 +359,7 @@
   </joint>
   <!-- Joint from base_so101_v2 to rotation_pitch_so101_v1 -->
   <joint name="shoulder_pan" type="revolute">
-    <origin xyz="0.0449 -0.000250002 0.0663" rpy="3.14159 1.07987e-08 3.14159"/>
+    <origin xyz="0.0449 -0.000250002 0.0663" rpy="3.14159 0.0 3.14159"/>
     <parent link="base_so101_v2"/>
     <child link="rotation_pitch_so101_v1"/>
     <axis xyz="0 0 1"/>
