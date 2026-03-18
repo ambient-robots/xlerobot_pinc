@@ -40,7 +40,7 @@ xlerobot_pinc/
 ├── src/lerobot/robots/xlerobot_pinc/   # Robot class & config
 ├── src/lerobot/robots/so107_follower/  # SO107 follower arm
 ├── examples/xlerobot_pinc/             # Teleop, VR, inference scripts
-├── ambient_urdf/                       # Bundled URDF model & 3D assets
+├── xlerobot_pinc_urdf/                       # Bundled URDF model & 3D assets
 ├── XLeVR/                              # VR teleoperation module
 ├── hardware/                           # Hardware docs & sources
 ├── setup_lerobot_symlinks.sh           # Symlink installer for lerobot
@@ -52,7 +52,7 @@ xlerobot_pinc/
 
 This platform extends [XLeRobot](https://github.com/Vector-Wangel/XLeRobot) with SO107-style 6-DoF arms and [PincOpen](https://github.com/pollen-robotics/PincOpen) grippers. See [hardware/README.md](hardware/README.md) for detailed hardware lineage and [hardware/SOURCES.md](hardware/SOURCES.md) for upstream print file locations.
 
-The URDF model is bundled in [`ambient_urdf/`](ambient_urdf/) and can be referenced directly via the `urdf_path` config key.
+The URDF model is bundled in [`xlerobot_pinc_urdf/`](xlerobot_pinc_urdf/) and can be referenced directly via the `urdf_path` config key.
 
 <details>
 <summary>Bill of Materials (BOM)</summary>
@@ -223,7 +223,7 @@ Edit `xlerobot_user_config.json` with your camera paths/serials and platform set
 ```json
 {
   "has_mobile_platform": false,
-  "urdf_path": "/absolute/path/to/xlerobot_pinc/ambient_urdf",
+  "urdf_path": "/absolute/path/to/xlerobot_pinc/xlerobot_pinc_urdf",
   "cameras": {
     "left_wrist": { "index_or_path": "/dev/videoX", "fps": 60, "width": 640, "height": 480, "fourcc": "YUYV" },
     "right_wrist": { "index_or_path": "/dev/videoY", "fps": 60, "width": 640, "height": 480, "fourcc": "YUYV" },

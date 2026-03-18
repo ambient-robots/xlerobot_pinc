@@ -83,7 +83,7 @@ class SimpleTeleopArm:
     
         joint_names_wo_gripper = [j for j in self.target_positions if j != 'gripper']
         self.kinematics= RobotKinematics(
-            urdf_path="/home/that/ambient_urdf/robot.urdf", 
+            urdf_path="/home/that/xlerobot_pinc_urdf/robot.urdf", 
             target_frame_name="gripper_frame_link",
             joint_names=joint_names_wo_gripper,
         )
