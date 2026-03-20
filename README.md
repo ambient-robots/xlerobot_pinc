@@ -31,6 +31,8 @@ source /path/to/xlerobot_pinc/load_xlerobot_env.sh
 python examples/xlerobot_pinc/keyboard_teleop_full_body.py
 ```
 
+All example scripts in this repository can be started directly from this checkout after the `lerobot` env is activated and [`load_xlerobot_env.sh`](load_xlerobot_env.sh) is sourced. There is no need to copy `examples/` or [`XLeVR/`](XLeVR/) into a separate `lerobot` repo.
+
 ## Repository Structure
 
 ```
@@ -139,6 +141,8 @@ This links the following into `lerobot`:
 - `src/lerobot/scripts/motor_id_tool.py`
 
 It does not link `examples/` or `XLeVR/`. If a target path already exists as a regular file, it is backed up with a timestamp before linking.
+
+That is intentional: run the example scripts and `XLeVR` locally from this `xlerobot_pinc` checkout instead of copying them into `lerobot`.
 
 </details>
 
