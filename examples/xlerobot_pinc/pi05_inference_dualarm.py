@@ -62,7 +62,7 @@ FULL_START_POS = {
     "right_arm_gripper": 20.0,
 }
 
-TASK_DESCRIPTION = "Take apart the LEGO build and put all pieces into the yellow zippered bag."
+TASK_DESCRIPTION = "Take apart the LEGO build into single pieces and put all pieces into the zippered bag."
 NUM_EPISODES = 50
 EPISODE_TIME_SEC = 300
 OPENPI_SERVER_IP = "192.168.0.63"
@@ -71,7 +71,7 @@ OPENPI_SERVER_IP = "192.168.0.63"
 FPS = 60
 
 class SimpleControlArm:
-    def __init__(self, joint_map, initial_obs, prefix="left", kp=0.75):
+    def __init__(self, joint_map, initial_obs, prefix="left", kp=0.85):
         self.joint_map = joint_map
         self.prefix = prefix
         self.kp = kp
@@ -308,13 +308,14 @@ def main():
         # Initialize policy server
         print("🔧 Initializing Policy Server...")
         client = websocket_client_policy.WebsocketClientPolicy(host=OPENPI_SERVER_IP, port=8000)
-        action_horizon =50
+        action_horizon = 50
 
         # Initiailize events
         events = {
-            "stop_inference": False,   # Press key ^: Stop inference
+            "stop_inference": False,   # Press key q: Stop inference
+            "reset_episode": False,    # Press key w: reset episode
         }
-        print("✅ VR system ready")
+        print("✅ Policy server ready")
 
         print("Starting inference loop...")
         inference_episodes = 0
@@ -322,11 +323,16 @@ def main():
             start_episode_t = time.perf_counter()
             timestamp = 0
             count_action_chunks = 0
+            input("🔧Press ENTER to start the next episode ...")
+            print(f"✅ Start episode: {inference_episodes}")
 
             while timestamp < EPISODE_TIME_SEC:
                 pressed_keys = set(keyboard.get_action().keys())
-                if '^' in pressed_keys:
+                if 'q' in pressed_keys:
                     events["stop_inference"] = True
+                    break
+                if 'w' in pressed_keys:
+                    events["reset_episode"] = True
                     break
                 
                 left_obs = robot.bus_left_base.sync_read("Present_Position", robot.left_arm_motors)
@@ -347,10 +353,13 @@ def main():
                 "state": joint_states,
                 "prompt": TASK_DESCRIPTION,
                 }
-                if count_action_chunks%10 ==0:
-                    print(f"Sent observation for inference: {observation}")
 
+                print(f"Sent observation for inference with joint states: {joint_states}")
+                start_infer_t = time.perf_counter()
                 action_chunk = client.infer(observation)["actions"]
+                dt_infer_s = time.perf_counter() - start_infer_t
+                dt_infer_ms = dt_infer_s * 1e3
+                print(f"Inference delay: {dt_infer_ms:.1f}ms")
 
                 for t in range(action_horizon):
                     start_loop_t = time.perf_counter()
@@ -380,8 +389,12 @@ def main():
                 print(f"✅ Reset environment after episode: {inference_episodes}")
                 joint_ipol.plan_to_target(robot, left_arm, right_arm, ctrl_freq=FPS, target_positions=FULL_START_POS)   
                 joint_ipol.execute_plan(robot, left_arm, right_arm)
+
+            if events["reset_episode"]:
+                events["reset_episode"] = False
+                continue
             
-            print(f"🚀 Saved episode: {inference_episodes}")
+            print(f"🚀 Finished episode: {inference_episodes}")
             inference_episodes += 1
         
     except Exception as e:

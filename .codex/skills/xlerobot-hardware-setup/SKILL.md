@@ -30,7 +30,7 @@ Use this skill for hardware-facing setup and debugging tasks. Focus on operator 
 ## Validation
 
 - Run `bash -n load_xlerobot_env.sh`.
-- If Python config code changed, run `python -m compileall src examples/xlerobot_pinc`.
+- If Python config code changed, run `python -m compileall src examples/so107_follower examples/xlerobot_pinc`.
 - Grep for touched env vars to ensure docs and examples stay aligned.
 
 ## References

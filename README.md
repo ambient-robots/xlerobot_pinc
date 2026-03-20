@@ -28,7 +28,7 @@ A bimanual robot platform with dual SO107-style 6-DoF arms, PincOpen grippers, a
 ```bash
 conda activate lerobot
 source /path/to/xlerobot_pinc/load_xlerobot_env.sh
-python examples/xlerobot_pinc/4_xlerobot_pinc_teleop_keyboard.py
+python examples/xlerobot_pinc/keyboard_teleop_full_body.py
 ```
 
 ## Repository Structure
@@ -37,6 +37,7 @@ python examples/xlerobot_pinc/4_xlerobot_pinc_teleop_keyboard.py
 xlerobot_pinc/
 ├── src/lerobot/robots/xlerobot_pinc/   # Robot class & config
 ├── src/lerobot/robots/so107_follower/  # SO107 follower arm
+├── examples/so107_follower/            # Standalone single-arm debug scripts
 ├── examples/xlerobot_pinc/             # Teleop, VR, inference scripts
 ├── xlerobot_pinc_urdf/                       # Bundled URDF model & 3D assets
 ├── XLeVR/                              # VR teleoperation module

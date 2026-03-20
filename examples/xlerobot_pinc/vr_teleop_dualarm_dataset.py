@@ -82,12 +82,17 @@ FULL_START_POS = {
     "right_arm_gripper": 20.0,
 }
 
-TASK_DESCRIPTION = "Take apart the LEGO build and put all pieces into the yellow zippered bag."
-HF_REPO_ID = "xuweiwu/take-part-lego-build"
+#TASK_DESCRIPTION = "Take apart the LEGO build."
+#HF_REPO_ID = "ambient-robots/take-part-lego-build-subtask1"
+#TASK_DESCRIPTION = "Put all LEGO pieces into the grey zippered bag."
+#HF_REPO_ID = "ambient-robots/take-part-lego-build-subtask2"
+TASK_DESCRIPTION = "Take apart the LEGO build and put all disassembled pieces into the grey zippered bag."
+HF_REPO_ID = "ambient-robots/take-part-lego-build-fulltask"
 NUM_EPISODES = 50
 EPISODE_TIME_SEC = 180
 
 FPS = 60
+RECORD_ENV_RESET = True
     
 class LowPassEMA:
     def __init__(self, dim: int, alpha: float):
@@ -594,7 +599,7 @@ def init_dataset(robot):
         features=dataset_features,
         robot_type=robot.name,
         image_writer_processes=4,
-        image_writer_threads=5,
+        image_writer_threads=8,
     )
     
     return dataset
@@ -775,11 +780,9 @@ def main():
                 timestamp = time.perf_counter() - start_episode_t
 
 
-            if not events["stop_recording"] and (
-            (recorded_episodes < NUM_EPISODES - 1) or events["rerecord_episode"]
-            ):
-                print(f"✅ Reset environment after episode: {recorded_episodes}")
-                joint_ipol.plan_to_target(robot, left_arm_teleop, right_arm_teleop, ctrl_freq=FPS, target_positions=FULL_START_POS)                
+            if RECORD_ENV_RESET and not events["rerecord_episode"]:
+                print(f"✅ Record environment reset of episode: {recorded_episodes}")
+                joint_ipol.plan_to_target(robot, left_arm_teleop, right_arm_teleop, ctrl_freq=FPS, target_positions=FULL_START_POS)
                 while joint_ipol.ipol_step < joint_ipol.num_via_points:
                     start_loop_t = time.perf_counter()
 
@@ -798,8 +801,13 @@ def main():
 
                     dt_s = time.perf_counter() - start_loop_t
                     precise_sleep(1 / FPS - dt_s)
-                
+
                 joint_ipol.reset_ipol(left_arm_teleop, right_arm_teleop)
+            else:
+                print(f"✅ Reset environment after episode without recording: {recorded_episodes}")
+                joint_ipol.plan_to_target(robot, left_arm_teleop, right_arm_teleop, ctrl_freq=FPS, target_positions=FULL_START_POS)
+                joint_ipol.execute_plan(robot, left_arm_teleop, right_arm_teleop)
+
             
             if events["rerecord_episode"]:
                 events["rerecord_episode"] = False

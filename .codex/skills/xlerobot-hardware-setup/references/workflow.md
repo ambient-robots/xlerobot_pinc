@@ -8,6 +8,8 @@
   User-editable runtime schema for `has_mobile_platform`, `urdf_path`, and camera identifiers.
 - `load_xlerobot_env.sh`
   JSON parsing, validation, and `XLEROBOT_*` env export behavior.
+- `examples/so107_follower/keyboard_ee_control.py`
+  Standalone single-arm debug example that relies on `XLEROBOT_URDF_PATH`.
 - `src/lerobot/robots/xlerobot_pinc/config_xlerobot_pinc.py`
   Env-backed config loading and validation for cameras and `has_mobile_platform`.
 - `src/lerobot/robots/xlerobot_pinc/xlerobot_pinc.py`
@@ -46,5 +48,5 @@ Pay attention to:
 ## Useful checks
 
 - `bash -n load_xlerobot_env.sh`
-- `python -m compileall src examples/xlerobot_pinc`
-- `rg -n "XLEROBOT_|has_mobile_platform" README.md src examples/xlerobot_pinc`
+- `python -m compileall src examples/so107_follower examples/xlerobot_pinc`
+- `rg -n "XLEROBOT_|has_mobile_platform" README.md src examples/so107_follower examples/xlerobot_pinc`

@@ -42,8 +42,9 @@ The overall flow is:
 
 See for example:
 
-- [`examples/xlerobot_pinc/9_vr_teleop_xlerobot_pinc_dualarm.py`](../examples/xlerobot_pinc/9_vr_teleop_xlerobot_pinc_dualarm.py)
-- [`examples/xlerobot_pinc/9_vr_teleop_xlerobot_pinc.py`](../examples/xlerobot_pinc/9_vr_teleop_xlerobot_pinc.py)
+- [`examples/xlerobot_pinc/vr_teleop_dualarm.py`](../examples/xlerobot_pinc/vr_teleop_dualarm.py)
+- [`examples/xlerobot_pinc/vr_teleop_dualarm_dataset.py`](../examples/xlerobot_pinc/vr_teleop_dualarm_dataset.py)
+- [`examples/xlerobot_pinc/vr_teleop_full_body.py`](../examples/xlerobot_pinc/vr_teleop_full_body.py)
 - [`src/lerobot/model/kinematics.py`](../src/lerobot/model/kinematics.py)
 
 ## ControlGoal fields

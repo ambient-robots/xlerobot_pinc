@@ -5,6 +5,7 @@ Fixed action format conversion issues
 Uses P control, keyboard only changes target joint angles
 """
 
+import os
 import time
 import logging
 import traceback
@@ -37,6 +38,20 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     force=True)
 logger = logging.getLogger(__name__)
+
+
+def get_required_env(name: str) -> str:
+    value = os.environ.get(name, "").strip()
+    if not value:
+        raise RuntimeError(
+            f"Missing required environment variable {name}. "
+            "Source load_xlerobot_env.sh before running this example."
+        )
+    return value
+
+DEFAULT_PORT = "/dev/xlerobot_left_base"
+DEFAULT_ID = "xlerobot_left_base"
+URDF_PATH = get_required_env("XLEROBOT_URDF_PATH")
 
 START_POS = {
     "shoulder_pan": 0.0,
@@ -83,7 +98,7 @@ class SimpleTeleopArm:
     
         joint_names_wo_gripper = [j for j in self.target_positions if j != 'gripper']
         self.kinematics= RobotKinematics(
-            urdf_path="/home/that/xlerobot_pinc_urdf/robot.urdf", 
+            urdf_path=URDF_PATH,
             target_frame_name="gripper_frame_link",
             joint_names=joint_names_wo_gripper,
         )
@@ -311,22 +326,17 @@ def main():
     print("="*50)
     
     try:
-        # Get port
-        port = input("Please enter SO107 robot USB port (e.g.: /dev/xlerobot_left_base or /dev/xlerobot_right_head): ").strip()
-        # If directly press enter, use default port
-        if not port:
-            port = "/dev/xlerobot_left_base"
-            print(f"[MAIN] Using default port: {port}")
-        else:
-            print(f"[MAIN] Connecting to port: {port}")
+        port = input(
+            "Please enter SO107 robot USB port "
+            f"(e.g.: /dev/xlerobot_left_base or /dev/xlerobot_right_head) [{DEFAULT_PORT}]: "
+        ).strip() or DEFAULT_PORT
+        print(f"[MAIN] Connecting to port: {port}")
 
-        # Get id
-        id = input("Please enter SO107 robot id (e.g.: xlerobot_left_base or xlerobot_right_head): ").strip()
-        if not id:
-            id = "xlerobot_left_base"
-            print(f"[MAIN] Using default id: {id}")
-        else:
-            print(f"[MAIN] Using id: {id}")
+        robot_id = input(
+            "Please enter SO107 robot id "
+            f"(e.g.: xlerobot_left_base or xlerobot_right_head) [{DEFAULT_ID}]: "
+        ).strip() or DEFAULT_ID
+        print(f"[MAIN] Using id: {robot_id}")
         
         # Configure and init robot
         cameras = {
@@ -370,7 +380,7 @@ def main():
         #     use_depth=False
         # ),
         }
-        robot_config = SO107FollowerConfig(port=port, id=id, cameras=cameras, use_degrees=True)
+        robot_config = SO107FollowerConfig(port=port, id=robot_id, cameras=cameras, use_degrees=True)
         robot = SO107Follower(robot_config)
         robot.connect()
 
