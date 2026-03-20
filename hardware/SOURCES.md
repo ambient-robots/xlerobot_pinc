@@ -36,8 +36,11 @@ Relevant upstream source: the `cad/` area and build documentation in the PincOpe
 
 Local custom exports shipped in this repository under [`custom_parts/`](custom_parts/):
 
+For the arm, the original SO101 under-arm section is split into separate elbow-flex and elbow-roll links to introduce the elbow-roll DoF in the modified SO107-style arm.
+
 | Part Files | Notes |
 |---|---|
-| `SO107_Wrist_Roll_Link.step` / `SO107_Wrist_Roll_Link.stl` | Adds an extra wrist-roll DoF relative to the baseline SO101-style arm layout. |
+| `SO107_Elbow_Flex_Link.step` / `SO107_Elbow_Flex_Link.stl` | Elbow-flex link in the split elbow module; effectively a copy of the SO101 `Wrist_Roll_Pitch` part. |
+| `SO107_Elbow_Roll_Link.step` / `SO107_Elbow_Roll_Link.stl` | Elbow-roll link in the split elbow module; modified from the SO101 `Under Arm` part. |
 | `PincOpen_Pointy_Tip_TPU95.step` / `PincOpen_Pointy_Tip_TPU95.stl` | Elastic pointy tip for the gripper. Recommended print material: TPU95. |
 | `PincOpen_Fisheye_Camera_Holder_38x38.step` / `PincOpen_Fisheye_Camera_Holder_38x38.stl` | Camera holder adapted for the 38x38 fisheye camera. |
