@@ -222,12 +222,13 @@ Create your local config from the template:
 cp xlerobot_user_config.example.json xlerobot_user_config.json
 ```
 
-Edit `xlerobot_user_config.json` with your camera paths/serials and platform settings. Leave `urdf_path` empty to use the bundled `xlerobot_pinc_urdf/robot.urdf`, or set it to a custom URDF file or directory:
+Edit `xlerobot_user_config.json` with your camera paths/serials and platform settings. Leave `urdf_path` empty to use the bundled `xlerobot_pinc_urdf/robot.urdf`, or set it to a custom URDF file or directory. Leave `xlevr_path` empty to use the bundled [`XLeVR/`](XLeVR/) directory, or set it to a custom XLeVR checkout if you run the VR monitor from elsewhere:
 
 ```json
 {
   "has_mobile_platform": false,
   "urdf_path": "",
+  "xlevr_path": "",
   "cameras": {
     "left_wrist": { "index_or_path": "/dev/videoX", "fps": 60, "width": 640, "height": 480, "fourcc": "YUYV" },
     "right_wrist": { "index_or_path": "/dev/videoY", "fps": 60, "width": 640, "height": 480, "fourcc": "YUYV" },
@@ -241,6 +242,8 @@ Load it in each shell session:
 ```bash
 source /path/to/xlerobot_pinc/load_xlerobot_env.sh
 ```
+
+This also prepends the repo root to `PYTHONPATH`, so local imports such as `from XLeVR.vr_monitor import VRMonitor` work when you run `python ./examples/xlerobot_pinc/...` from this checkout.
 
 </details>
 

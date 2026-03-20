@@ -84,7 +84,8 @@ Then open the HTTPS address shown in the terminal in the VR headset browser.
 
 Notes:
 
-- If you move or copy `vr_monitor.py`, update the `XLEVR_PATH` constant at the top of the file.
+- If you use a copied or custom XLeVR checkout, set `xlevr_path` in your local config derived from [`xlerobot_user_config.example.json`](../xlerobot_user_config.example.json) and re-source [`load_xlerobot_env.sh`](../load_xlerobot_env.sh). `vr_monitor.py` reads `XLEROBOT_XLEVR_PATH` and otherwise falls back to the local `XLeVR/` directory that contains the script.
+- When you source [`load_xlerobot_env.sh`](../load_xlerobot_env.sh), it also prepends the repo root to `PYTHONPATH`, so the local examples can import `XLeVR` directly with `from XLeVR...`.
 - In this repository, the more common usage is to import `VRMonitor` from the teleoperation examples rather than run it as a standalone utility.
 
 ## Typical integration pattern

@@ -10,6 +10,8 @@ from typing import Dict, List, Tuple, Optional
 import numpy as np
 from pathlib import Path
 
+XLEVR_ROOT = Path(__file__).resolve().parents[1]
+
 # Default configuration values (fallback if YAML file doesn't exist)
 DEFAULT_CONFIG = {
     "network": {
@@ -44,33 +46,43 @@ DEFAULT_CONFIG = {
     }
 }
 
+def _resolve_project_path(path_value: str) -> str:
+    path = Path(path_value).expanduser()
+    if not path.is_absolute():
+        path = (XLEVR_ROOT / path).resolve()
+    return str(path)
+
+
 def load_config(config_path: str = "config.yaml") -> dict:
     """Load configuration from YAML file with fallback to defaults."""
     config = DEFAULT_CONFIG.copy()
-    
-    if os.path.exists(config_path):
+
+    resolved_config_path = Path(_resolve_project_path(config_path))
+
+    if resolved_config_path.exists():
         try:
-            with open(config_path, 'r') as f:
+            with resolved_config_path.open('r', encoding='utf-8') as f:
                 yaml_config = yaml.safe_load(f)
                 if yaml_config:
                     # Deep merge yaml config into default config
                     _deep_merge(config, yaml_config)
         except Exception as e:
-            print(f"Warning: Could not load config from {config_path}: {e}")
+            print(f"Warning: Could not load config from {resolved_config_path}: {e}")
             print("Using default configuration")
     else:
-        print(f"Config file {config_path} not found, using defaults")
+        print(f"Config file {resolved_config_path} not found, using defaults")
     
     return config
 
 def save_config(config: dict, config_path: str = "config.yaml"):
     """Save configuration to YAML file."""
+    resolved_config_path = Path(_resolve_project_path(config_path))
     try:
-        with open(config_path, 'w') as f:
+        with resolved_config_path.open('w', encoding='utf-8') as f:
             yaml.dump(config, f, default_flow_style=False, indent=2)
         return True
     except Exception as e:
-        print(f"Error saving config to {config_path}: {e}")
+        print(f"Error saving config to {resolved_config_path}: {e}")
         return False
 
 def _deep_merge(base: dict, update: dict):
@@ -89,8 +101,8 @@ HTTPS_PORT = _config_data["network"]["https_port"]
 WEBSOCKET_PORT = _config_data["network"]["websocket_port"]
 HOST_IP = _config_data["network"]["host_ip"]
 
-CERTFILE = _config_data["ssl"]["certfile"]
-KEYFILE = _config_data["ssl"]["keyfile"]
+CERTFILE = _resolve_project_path(_config_data["ssl"]["certfile"])
+KEYFILE = _resolve_project_path(_config_data["ssl"]["keyfile"])
 
 VR_TO_ROBOT_POS_SCALE = _config_data["robot"]["vr_to_robot_pos_scale"]
 VR_TO_ROBOT_ORI_SCALE = _config_data["robot"]["vr_to_robot_ori_scale"]

@@ -1,6 +1,7 @@
 {
   "has_mobile_platform": false,
   "urdf_path": "",
+  "xlevr_path": "",
   "cameras": {
     "left_wrist": {
       "index_or_path": "/dev/videoX or /dev/v4l/by-path/platform-XXXX-left-video-index0",
