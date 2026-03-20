@@ -4,7 +4,7 @@ This folder documents the physical hardware lineage of `xlerobot_pinc`.
 
 ## Hardware lineage
 
-`xlerobot_pinc` is extended from [XLeRobot](https://github.com/Vector-Wangel/XLeRobot). More specifically, the hardware basis used here follows the upstream `xlerobot_0_4_0` direction documented in the [`XLeRobot/hardware`](https://github.com/Vector-Wangel/XLeRobot/tree/main/hardware) folder, especially around the arm-base structure and upper-body mounting geometry.
+`xlerobot_pinc` is extended from [XLeRobot](https://github.com/Vector-Wangel/XLeRobot). More specifically, the hardware basis used here follows the upstream `xlerobot_0_4_0` hardware layout documented in the [`XLeRobot/hardware`](https://github.com/Vector-Wangel/XLeRobot/tree/main/hardware) folder, especially around the arm-base structure and upper-body mounting geometry.
 
 Relative to that upstream platform, this repo is centered on:
 

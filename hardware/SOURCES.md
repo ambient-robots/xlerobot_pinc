@@ -24,7 +24,7 @@ Relevant upstream hardware paths:
 | [`hardware/ongoing_upgrades/`](https://github.com/Vector-Wangel/XLeRobot/tree/main/hardware/ongoing_upgrades) | Newer upstream hardware revisions. |
 | [`hardware/XLeRobot_0_4_0_extra.stl`](https://github.com/Vector-Wangel/XLeRobot/blob/main/hardware/XLeRobot_0_4_0_extra.stl) | Extra STL for the upstream 0.4.0 generation. |
 
-For `xlerobot_pinc`, the main upstream inheritance is the 0.4.0 arm-base and upper-body direction, not the dual-wheel base.
+For `xlerobot_pinc`, the main upstream inheritance is the 0.4.0 arm-base and upper-body hardware layout, not the dual-wheel base.
 
 ## PincOpen
 
@@ -36,8 +36,8 @@ Relevant upstream source: the `cad/` area and build documentation in the PincOpe
 
 Local custom exports shipped in this repository under [`custom_parts/`](custom_parts/):
 
-| Part Files | Basis | Notes |
-|---|---|---|
-| `SO107_Wrist_Roll_Link.step` / `SO107_Wrist_Roll_Link.stl` | SO107 arm concept plus the `xlerobot_pinc` Onshape assembly above | Adds an extra wrist-roll DoF relative to the baseline SO101-style arm layout. |
-| `PincOpen_Pointy_Tip_TPU95.step` / `PincOpen_Pointy_Tip_TPU95.stl` | PincOpen plus the `xlerobot_pinc` hardware design | Elastic pointy tip for the gripper. Recommended print material: TPU95. |
-| `PincOpen_Fisheye_Camera_Holder_38x38.step` / `PincOpen_Fisheye_Camera_Holder_38x38.stl` | PincOpen camera-holder concept plus the `xlerobot_pinc` hardware design | Camera holder adapted for the 38x38 fisheye camera. |
+| Part Files | Notes |
+|---|---|
+| `SO107_Wrist_Roll_Link.step` / `SO107_Wrist_Roll_Link.stl` | Adds an extra wrist-roll DoF relative to the baseline SO101-style arm layout. |
+| `PincOpen_Pointy_Tip_TPU95.step` / `PincOpen_Pointy_Tip_TPU95.stl` | Elastic pointy tip for the gripper. Recommended print material: TPU95. |
+| `PincOpen_Fisheye_Camera_Holder_38x38.step` / `PincOpen_Fisheye_Camera_Holder_38x38.stl` | Camera holder adapted for the 38x38 fisheye camera. |

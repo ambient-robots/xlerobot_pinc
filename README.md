@@ -40,7 +40,7 @@ xlerobot_pinc/
 ├── examples/xlerobot_pinc/             # Teleop, VR, inference scripts
 ├── xlerobot_pinc_urdf/                       # Bundled URDF model & 3D assets
 ├── XLeVR/                              # VR teleoperation module
-├── hardware/                           # Hardware docs & sources
+├── hardware/                           # Hardware docs, source refs, custom part exports
 ├── setup_lerobot_symlinks.sh           # Symlink installer for lerobot
 ├── load_xlerobot_env.sh                # Env loader from JSON config
 └── xlerobot_user_config.example.json   # User config template
@@ -48,7 +48,7 @@ xlerobot_pinc/
 
 ## Hardware
 
-This platform extends [XLeRobot](https://github.com/Vector-Wangel/XLeRobot) with SO107-style 6-DoF arms and [PincOpen](https://github.com/pollen-robotics/PincOpen) grippers. See [hardware/README.md](hardware/README.md) for detailed hardware lineage and [hardware/SOURCES.md](hardware/SOURCES.md) for upstream print file locations.
+This platform extends [XLeRobot](https://github.com/Vector-Wangel/XLeRobot) with SO107-style 6-DoF arms and [PincOpen](https://github.com/pollen-robotics/PincOpen) grippers. See [hardware/README.md](hardware/README.md) for hardware lineage and local custom parts, and [hardware/SOURCES.md](hardware/SOURCES.md) for upstream, Onshape, and local asset references.
 
 The URDF models are bundled in [`xlerobot_pinc_urdf/`](xlerobot_pinc_urdf/) and can be referenced via the `urdf_path` config key:
 
