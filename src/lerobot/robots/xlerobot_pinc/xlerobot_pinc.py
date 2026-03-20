@@ -267,11 +267,8 @@ class XLerobotPinc(Robot):
             input(
                 f"Move '{motor}' to the middle of its range of motion and press ENTER...."
             )
-            self.bus_right_head.enable_torque(motor)
             homing_offsets.update(self.bus_right_head.set_half_turn_homings(motor))
         homing_offsets[fixed_range_motor] = self.bus_right_head.read("Homing_Offset", fixed_range_motor, normalize=False)
-        input("Hold the right arm. Press ENTER when ready...")
-        self.bus_right_head.disable_torque()
 
         print(
             f"Move all right arm and head joints (except '{fixed_range_motor}') sequentially through their "
@@ -306,13 +303,10 @@ class XLerobotPinc(Robot):
             input(
                 f"Move '{motor}' to the middle of its range of motion and press ENTER...."
             )
-            self.bus_left_base.enable_torque(motor)
             homing_offsets.update(self.bus_left_base.set_half_turn_homings(motor))
         homing_offsets[fixed_range_motor] = self.bus_left_base.read("Homing_Offset", fixed_range_motor, normalize=False)
         if self.has_mobile_platform:
             homing_offsets.update(dict.fromkeys(self.base_motors, 0))
-        input("Hold the left arm. Press ENTER when ready...")
-        self.bus_left_base.disable_torque()
         
         print(
             f"Move all left arm joints except '{fixed_range_motor}' sequentially through their "
