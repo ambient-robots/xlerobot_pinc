@@ -2,7 +2,7 @@
 
 This directory contains the `xlerobot_pinc` fork of XLeVR, the lightweight VR input layer used by the VR teleoperation examples in this repository.
 
-It is based on the upstream XLeVR module from XLeRobot, but it is not a one-to-one copy. The main local changes are made so it works with the SO107-style arms and the Placo-based IK pipeline used in this repo.
+It is based on the upstream XLeVR module from XLeRobot, but it is not a one-to-one copy. The main local changes are made so it works with the SO107-style arms and the Placo-based IK pipeline used in this repo, and so `vr_monitor.py` uses per-arm FIFO queues to keep reset handling deterministic.
 
 ## Main difference from upstream
 
@@ -37,7 +37,7 @@ The overall flow is:
 
 1. The browser-side WebXR app sends controller pose and button data over WebSocket.
 2. `XLeVR/xlevr/inputs/vr_ws_server.py` converts that into `ControlGoal` messages with relative position and orientation updates.
-3. `XLeVR/vr_monitor.py` queues those messages per arm and exposes them to the teleoperation loop.
+3. `XLeVR/vr_monitor.py` queues those messages per arm in FIFO order and exposes them to the teleoperation loop, which keeps `RESET` handling deterministic.
 4. The `xlerobot_pinc` VR examples consume those goals and run the downstream IK pipeline through LeRobot's default `placo`-based kinematics layer.
 
 See for example:
