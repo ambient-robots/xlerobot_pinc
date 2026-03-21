@@ -2,7 +2,7 @@ name: Deploy URDF Viewer to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, feat/xlerobot_pinc]
     paths:
       - 'web/**'
       - 'xlerobot_pinc_urdf/**'
