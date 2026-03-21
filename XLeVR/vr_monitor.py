@@ -17,20 +17,21 @@ from pathlib import Path
 from typing import Optional
 from collections import deque
 
-# Set the absolute path to the xlevr folder
-XLEVR_PATH = "/home/that/lerobot/examples/xlerobot/XLeVR"
+def resolve_xlevr_path() -> str:
+    """Resolve the XLeVR root directory from env or the local checkout."""
+    configured_path = os.environ.get("XLEROBOT_XLEVR_PATH") or os.environ.get("XLEVR_PATH")
+    if configured_path and configured_path.strip():
+        return str(Path(configured_path).expanduser().resolve())
+    return str(Path(__file__).resolve().parent)
+
+
+XLEVR_PATH = resolve_xlevr_path()
 
 def setup_xlevr_environment():
     """Setup xlevr environment"""
     # Add xlevr path to Python path
     if XLEVR_PATH not in sys.path:
         sys.path.insert(0, XLEVR_PATH)
-    
-    # Set working directory
-    os.chdir(XLEVR_PATH)
-    
-    # Set environment variables
-    os.environ['PYTHONPATH'] = f"{XLEVR_PATH}:{os.environ.get('PYTHONPATH', '')}"
 
 def get_local_ip():
     """Get the local IP address of this machine."""
@@ -49,6 +50,7 @@ def get_local_ip():
 
 def import_xlevr_modules():
     """Import xlevr modules"""
+    setup_xlevr_environment()
     try:
         from xlevr.config import XLeVRConfig
         from xlevr.inputs.vr_ws_server import VRWebSocketServer
@@ -56,7 +58,8 @@ def import_xlevr_modules():
         return XLeVRConfig, VRWebSocketServer, ControlGoal, ControlMode
     except ImportError as e:
         print(f"Error importing xlevr modules: {e}")
-        print(f"Make sure XLEVR_PATH is correct: {XLEVR_PATH}")
+        print(f"Resolved XLeVR path: {XLEVR_PATH}")
+        print("Set XLEROBOT_XLEVR_PATH if you are using a custom XLeVR checkout.")
         return None, None, None, None
 
 class SimpleAPIHandler(http.server.BaseHTTPRequestHandler):
@@ -142,7 +145,7 @@ class SimpleHTTPSServer:
             
             # Setup SSL
             context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-            context.load_cert_chain('cert.pem', 'key.pem')
+            context.load_cert_chain(self.config.certfile, self.config.keyfile)
             self.httpd.socket = context.wrap_socket(self.httpd.socket, server_side=True)
             
             # Start server in a separate thread
@@ -387,7 +390,7 @@ def main():
     # Check XLeVR path
     if not os.path.exists(XLEVR_PATH):
         print(f"❌ XLeVR path does not exist: {XLEVR_PATH}")
-        print("Please update XLEVR_PATH in the script")
+        print("Set XLEROBOT_XLEVR_PATH if you are using a custom XLeVR checkout.")
         return
     
     # Create monitor

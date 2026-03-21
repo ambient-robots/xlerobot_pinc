@@ -9,6 +9,25 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_PATH="${1:-${SCRIPT_DIR}/xlerobot_user_config.json}"
 
+prepend_to_pythonpath() {
+    local path="$1"
+    case ":${PYTHONPATH:-}:" in
+        *":${path}:"*) ;;
+        *) export PYTHONPATH="${path}${PYTHONPATH:+:${PYTHONPATH}}" ;;
+    esac
+}
+
+if [[ -z "${PYTHON_BIN:-}" ]]; then
+    if command -v python >/dev/null 2>&1; then
+        PYTHON_BIN="python"
+    elif command -v python3 >/dev/null 2>&1; then
+        PYTHON_BIN="python3"
+    else
+        echo "Could not find python or python3 on PATH."
+        return 1
+    fi
+fi
+
 if [[ ! -f "${CONFIG_PATH}" ]]; then
     echo "Config file not found: ${CONFIG_PATH}"
     echo "Create it from: ${SCRIPT_DIR}/xlerobot_user_config.example.json"
@@ -16,13 +35,17 @@ if [[ ! -f "${CONFIG_PATH}" ]]; then
 fi
 
 if ! EXPORT_LINES="$(
-python - "${CONFIG_PATH}" <<'PY'
+"${PYTHON_BIN}" - "${CONFIG_PATH}" "${SCRIPT_DIR}" <<'PY'
 import json
 import shlex
 import sys
 from pathlib import Path
 
 config_path = Path(sys.argv[1])
+script_dir = Path(sys.argv[2]).resolve()
+bundled_urdf_path = script_dir / "xlerobot_pinc_urdf" / "robot.urdf"
+bundled_xlevr_path = script_dir / "XLeVR"
+
 with config_path.open("r", encoding="utf-8") as f:
     cfg = json.load(f)
 
@@ -33,15 +56,57 @@ has_mobile_platform = cfg["has_mobile_platform"]
 if not isinstance(has_mobile_platform, bool):
     raise SystemExit("has_mobile_platform must be a JSON boolean (true/false)")
 
-if "urdf_path" not in cfg:
-    raise SystemExit("Missing required key: urdf_path")
+urdf_path = cfg.get("urdf_path")
+if urdf_path is None:
+    resolved_urdf_path = bundled_urdf_path
+else:
+    if not isinstance(urdf_path, str):
+        raise SystemExit("urdf_path must be a JSON string when provided")
 
-urdf_path = cfg["urdf_path"]
-if not isinstance(urdf_path, str) or not urdf_path.strip():
-    raise SystemExit("urdf_path must be a non-empty JSON string")
+    urdf_path = urdf_path.strip()
+    if not urdf_path:
+        resolved_urdf_path = bundled_urdf_path
+    else:
+        resolved_urdf_path = Path(urdf_path).expanduser()
+        if not resolved_urdf_path.is_absolute():
+            resolved_urdf_path = (config_path.parent / resolved_urdf_path).resolve()
+        if resolved_urdf_path.suffix.lower() != ".urdf":
+            resolved_urdf_path = resolved_urdf_path / "robot.urdf"
+
+if not resolved_urdf_path.is_file():
+    raise SystemExit(
+        f"Resolved URDF path does not exist or is not a file: {resolved_urdf_path}"
+    )
 
 print(f"export XLEROBOT_HAS_MOBILE_PLATFORM={'1' if has_mobile_platform else '0'}")
-print(f"export XLEROBOT_URDF_PATH={shlex.quote(urdf_path)}")
+print(f"export XLEROBOT_URDF_PATH={shlex.quote(str(resolved_urdf_path))}")
+
+xlevr_path = cfg.get("xlevr_path")
+if xlevr_path is None:
+    resolved_xlevr_path = bundled_xlevr_path
+else:
+    if not isinstance(xlevr_path, str):
+        raise SystemExit("xlevr_path must be a JSON string when provided")
+
+    xlevr_path = xlevr_path.strip()
+    if not xlevr_path:
+        resolved_xlevr_path = bundled_xlevr_path
+    else:
+        resolved_xlevr_path = Path(xlevr_path).expanduser()
+        if not resolved_xlevr_path.is_absolute():
+            resolved_xlevr_path = (config_path.parent / resolved_xlevr_path).resolve()
+
+if not resolved_xlevr_path.is_dir():
+    raise SystemExit(
+        f"Resolved XLeVR path does not exist or is not a directory: {resolved_xlevr_path}"
+    )
+
+if not (resolved_xlevr_path / "xlevr").is_dir():
+    raise SystemExit(
+        f"Resolved XLeVR path does not look like an XLeVR checkout: missing {resolved_xlevr_path / 'xlevr'}"
+    )
+
+print(f"export XLEROBOT_XLEVR_PATH={shlex.quote(str(resolved_xlevr_path))}")
 
 if "cameras" not in cfg:
     raise SystemExit("Missing required key: cameras")
@@ -138,9 +203,12 @@ then
 fi
 
 eval "${EXPORT_LINES}"
+prepend_to_pythonpath "${SCRIPT_DIR}"
 echo "Loaded XLerobot env from ${CONFIG_PATH}"
 echo "  XLEROBOT_HAS_MOBILE_PLATFORM=${XLEROBOT_HAS_MOBILE_PLATFORM}"
 echo "  XLEROBOT_URDF_PATH=${XLEROBOT_URDF_PATH}"
+echo "  XLEROBOT_XLEVR_PATH=${XLEROBOT_XLEVR_PATH}"
+echo "  PYTHONPATH includes ${SCRIPT_DIR}"
 echo "  left_wrist: index_or_path=${XLEROBOT_LEFT_WRIST_INDEX_OR_PATH}, fps=${XLEROBOT_LEFT_WRIST_FPS:-<default 60>}, width=${XLEROBOT_LEFT_WRIST_WIDTH:-<default 640>}, height=${XLEROBOT_LEFT_WRIST_HEIGHT:-<default 480>}, fourcc=${XLEROBOT_LEFT_WRIST_FOURCC:-<default YUYV>}"
 echo "  right_wrist: index_or_path=${XLEROBOT_RIGHT_WRIST_INDEX_OR_PATH}, fps=${XLEROBOT_RIGHT_WRIST_FPS:-<default 60>}, width=${XLEROBOT_RIGHT_WRIST_WIDTH:-<default 640>}, height=${XLEROBOT_RIGHT_WRIST_HEIGHT:-<default 480>}, fourcc=${XLEROBOT_RIGHT_WRIST_FOURCC:-<default YUYV>}"
 echo "  head: serial_number_or_name=${XLEROBOT_HEAD_SERIAL_NUMBER_OR_NAME}, fps=${XLEROBOT_HEAD_FPS:-<default 60>}, width=${XLEROBOT_HEAD_WIDTH:-<default 640>}, height=${XLEROBOT_HEAD_HEIGHT:-<default 480>}"

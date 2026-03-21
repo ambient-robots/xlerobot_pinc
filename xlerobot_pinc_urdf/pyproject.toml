@@ -1,0 +1,6 @@
+[project]
+name = "xlerobot_pinc_urdf"
+version = "0.1.0"
+description = "URDF files and tools for XLeRobot Pinc"
+requires-python = ">=3.10"
+dependencies = ["rich>=14.0.0", "yourdfpy>=0.0.60"]

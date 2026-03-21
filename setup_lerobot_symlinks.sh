@@ -2,11 +2,11 @@
 set -euo pipefail
 
 # Usage:
-#   ./setup_lerobot_symlinks.sh [path/to/lerobot] [path/to/xlerobot_pro]
+#   ./setup_lerobot_symlinks.sh [path/to/lerobot] [path/to/xlerobot_pinc]
 #
 # Defaults:
-#   lerobot:      ../lerobot (relative to xlerobot_pro repo root)
-#   xlerobot_pro: inferred from this script location
+#   lerobot:      ../lerobot (relative to xlerobot_pinc repo root)
+#   xlerobot_pinc: inferred from this script location
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 XLEROBOT_REPO_DEFAULT="${SCRIPT_DIR}"
@@ -18,12 +18,12 @@ TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 
 if [[ -z "${LEROBOT_REPO}" || ! -d "${LEROBOT_REPO}" ]]; then
     echo "Error: lerobot directory not found: ${LEROBOT_REPO}"
-    echo "Usage: ./setup_lerobot_symlinks.sh /path/to/lerobot [/path/to/xlerobot_pro]"
+    echo "Usage: ./setup_lerobot_symlinks.sh /path/to/lerobot [/path/to/xlerobot_pinc]"
     exit 1
 fi
 
 if [[ ! -d "${XLEROBOT_REPO}" ]]; then
-    echo "Error: xlerobot_pro directory not found: ${XLEROBOT_REPO}"
+    echo "Error: xlerobot_pinc directory not found: ${XLEROBOT_REPO}"
     exit 1
 fi
 
@@ -58,7 +58,7 @@ link_path() {
 }
 
 # Core robot integrations
-link_path "src/lerobot/robots/xlerobot_pro" "src/lerobot/robots/xlerobot_pro"
+link_path "src/lerobot/robots/xlerobot_pinc" "src/lerobot/robots/xlerobot_pinc"
 link_path "src/lerobot/robots/so107_follower" "src/lerobot/robots/so107_follower"
 link_path "src/lerobot/model/kinematics.py" "src/lerobot/model/kinematics.py"
 link_path "src/lerobot/utils/quadratic_spline_via_ipol.py" "src/lerobot/utils/quadratic_spline_via_ipol.py"
@@ -67,4 +67,4 @@ link_path "src/lerobot/scripts/motor_id_tool.py" "src/lerobot/scripts/motor_id_t
 echo
 echo "Done."
 echo "lerobot repo: ${LEROBOT_REPO}"
-echo "xlerobot_pro repo: ${XLEROBOT_REPO}"
+echo "xlerobot_pinc repo: ${XLEROBOT_REPO}"

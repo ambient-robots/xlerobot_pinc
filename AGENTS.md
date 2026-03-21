@@ -1,19 +1,19 @@
 # AGENTS.md
 
-Repository-level instructions for coding agents working in `xlerobot_pro`.
+Repository-level instructions for coding agents working in `xlerobot_pinc`.
 
 ## Scope
-- Primary areas: `src/lerobot/robots/xlerobot_pro/`, `examples/xlerobot_pro/`, root workflow scripts, and `README.md`.
+- Primary areas: `src/lerobot/robots/xlerobot_pinc/`, `examples/xlerobot_pinc/`, `examples/so107_follower/`, root workflow scripts, and `README.md`.
 - Treat this file as always-on policy. Put deeper task-specific procedures in skills, not here.
 
 ## Architecture
-- Keep `xlerobot_pro` as the unified robot integration entrypoint: `XLerobotPro` and `XLerobotProConfig`.
+- Keep `xlerobot_pinc` as the unified robot integration entrypoint: `XLerobotPinc` and `XLerobotPincConfig`.
 - Treat mobile-base support as configuration-driven through `has_mobile_platform`.
 - When changing behavior that differs between base and no-base setups, update the robot class and affected examples consistently.
 
 ## Config Surface
 - Keep runtime configuration coherent across these layers:
-  1. `src/lerobot/robots/xlerobot_pro/config_xlerobot_pro.py`
+  1. `src/lerobot/robots/xlerobot_pinc/config_xlerobot_pinc.py`
   2. `load_xlerobot_env.sh`
   3. `xlerobot_user_config.example.json`
   4. `README.md`
@@ -21,7 +21,8 @@ Repository-level instructions for coding agents working in `xlerobot_pro`.
 - Fail fast with explicit validation errors for missing or invalid required config.
 
 ## Example Scripts
-- Prefer unified examples under `examples/xlerobot_pro/`.
+- Prefer unified examples under `examples/xlerobot_pinc/`.
+- Treat `examples/so107_follower/` as standalone single-arm debug helpers; keep them lightweight and aligned with shared env/runtime assumptions such as `XLEROBOT_URDF_PATH`.
 - Base-specific teleop or motion logic must be gated on robot/config state, not assumed unconditionally.
 - Avoid hardcoded user-specific paths in examples.
 
@@ -38,7 +39,7 @@ Repository-level instructions for coding agents working in `xlerobot_pro`.
 ## Validation
 - After edits, run targeted checks relevant to the touched files.
 - For Python and shell changes, default checks are:
-  - `python -m compileall src examples/xlerobot_pro`
+  - `python -m compileall src examples/so107_follower examples/xlerobot_pinc`
   - `bash -n load_xlerobot_env.sh setup_lerobot_symlinks.sh`
 - Review `git diff` for accidental scope creep before concluding.
 

@@ -2,21 +2,28 @@
 
 ## Main example files
 
-- `examples/xlerobot_pro/4_xlerobot_pro_teleop_keyboard.py`
+- `examples/xlerobot_pinc/keyboard_teleop_full_body.py`
   Keyboard teleop, head control, optional base behavior, URDF env usage.
-- `examples/xlerobot_pro/9_vr_teleop_xlerobot_pro.py`
-  Single-robot VR flow with optional base handling.
-- `examples/xlerobot_pro/9_vr_teleop_xlerobot_pro_dualarm.py`
+- `examples/xlerobot_pinc/vr_teleop_full_body.py`
+  Full-body VR flow with optional head and base handling.
+- `examples/xlerobot_pinc/vr_teleop_dualarm.py`
   Dual-arm VR teleop flow.
-- `examples/xlerobot_pro/9_vr_teleop_xlerobot_pro_dualarm_w_dataset_recording.py`
+- `examples/xlerobot_pinc/vr_teleop_dualarm_dataset.py`
   Dual-arm VR teleop plus dataset recording.
-- `examples/xlerobot_pro/9_pi05_inference_xlerobot_pro_dualarm.py`
+- `examples/xlerobot_pinc/pi05_inference_dualarm.py`
   Inference-oriented example using the same robot/config surface.
+
+## Standalone debug helpers
+
+- `examples/so107_follower/keyboard_joint_control.py`
+  Single-arm joint-space keyboard teleop for SO107 debugging.
+- `examples/so107_follower/keyboard_ee_control.py`
+  Single-arm end-effector keyboard teleop using `XLEROBOT_URDF_PATH`.
 
 ## Shared dependencies
 
-- `src/lerobot/robots/xlerobot_pro/config_xlerobot_pro.py`
-- `src/lerobot/robots/xlerobot_pro/xlerobot_pro.py`
+- `src/lerobot/robots/xlerobot_pinc/config_xlerobot_pinc.py`
+- `src/lerobot/robots/xlerobot_pinc/xlerobot_pinc.py`
 - `load_xlerobot_env.sh`
 - `xlerobot_user_config.example.json`
 - `README.md`
@@ -45,3 +52,4 @@ Check:
 - `XLEROBOT_URDF_PATH` usage
 - example startup assumptions
 - README operator instructions
+- the standalone SO107 debug helpers if the change affects shared URDF handling
