@@ -3,9 +3,13 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Vector-Wangel/XLeRobot"><img src="https://img.shields.io/badge/XLeRobot-upstream-blue?style=for-the-badge" alt="XLeRobot"/></a>
-  <a href="https://github.com/pollen-robotics/PincOpen"><img src="https://img.shields.io/badge/PincOpen-gripper-green?style=for-the-badge" alt="PincOpen"/></a>
-  <a href="https://github.com/huggingface/lerobot"><img src="https://img.shields.io/badge/SO107-arm-orange?style=for-the-badge" alt="SO107"/></a>
+  <a href="https://cad.onshape.com/documents/497bc5aee616bc3122c03e8e/w/01522a834421a6d358114bf2/e/2197a655705492fa3028d295?renderMode=0&uiState=69be6962b2d253007fa0bfa1"><img src="https://img.shields.io/badge/Onshape-Arm-4ECDC4?style=for-the-badge" alt="Onshape Arm"/></a>
+  <a href="https://cad.onshape.com/documents/96925cf817c1a878a85e838a/w/65e84f84222e56821484522f/e/8df6a6c93d54b1b95e807d87"><img src="https://img.shields.io/badge/Onshape-Platform-FFD93D?style=for-the-badge" alt="Onshape Platform"/></a>
+</p>
+<p align="center">
+  <a href="https://github.com/Vector-Wangel/XLeRobot"><img src="https://img.shields.io/badge/XLeRobot-upstream-gray?style=for-the-badge" alt="XLeRobot"/></a>
+  <a href="https://github.com/pollen-robotics/PincOpen"><img src="https://img.shields.io/badge/PincOpen-gripper-gray?style=for-the-badge" alt="PincOpen"/></a>
+  <a href="https://github.com/huggingface/lerobot"><img src="https://img.shields.io/badge/SO107-arm-gray?style=for-the-badge" alt="SO107"/></a>
 </p>
 
 ---
