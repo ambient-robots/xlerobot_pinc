@@ -3,8 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://cad.onshape.com/documents/fe574263a6d1251cdc76e722/w/bddff6f5713952de222d9e62/e/b786fcf94e856fa61cd7fefa"><img src="https://img.shields.io/badge/Onshape-Assembly-FF6B6B?style=for-the-badge" alt="Onshape Assembly"/></a>
-  <a href="https://cad.onshape.com/documents/497bc5aee616bc3122c03e8e/w/01522a834421a6d358114bf2/e/2197a655705492fa3028d295"><img src="https://img.shields.io/badge/Onshape-Arm-4ECDC4?style=for-the-badge" alt="Onshape Arm"/></a>
+  <a href="https://cad.onshape.com/documents/497bc5aee616bc3122c03e8e/w/01522a834421a6d358114bf2/e/2197a655705492fa3028d295?renderMode=0&uiState=69be6962b2d253007fa0bfa1"><img src="https://img.shields.io/badge/Onshape-Arm-4ECDC4?style=for-the-badge" alt="Onshape Arm"/></a>
   <a href="https://cad.onshape.com/documents/96925cf817c1a878a85e838a/w/65e84f84222e56821484522f/e/8df6a6c93d54b1b95e807d87"><img src="https://img.shields.io/badge/Onshape-Platform-FFD93D?style=for-the-badge" alt="Onshape Platform"/></a>
 </p>
 <p align="center">
