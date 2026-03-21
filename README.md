@@ -9,7 +9,6 @@
 <p align="center">
   <a href="https://github.com/Vector-Wangel/XLeRobot"><img src="https://img.shields.io/badge/XLeRobot-upstream-gray?style=for-the-badge" alt="XLeRobot"/></a>
   <a href="https://github.com/pollen-robotics/PincOpen"><img src="https://img.shields.io/badge/PincOpen-gripper-gray?style=for-the-badge" alt="PincOpen"/></a>
-  <a href="https://github.com/huggingface/lerobot"><img src="https://img.shields.io/badge/SO107-arm-gray?style=for-the-badge" alt="SO107"/></a>
 </p>
 
 ---
