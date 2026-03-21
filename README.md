@@ -7,6 +7,9 @@
   <a href="https://cad.onshape.com/documents/96925cf817c1a878a85e838a/w/65e84f84222e56821484522f/e/8df6a6c93d54b1b95e807d87"><img src="https://img.shields.io/badge/Onshape-Platform-FFD93D?style=for-the-badge" alt="Onshape Platform"/></a>
 </p>
 <p align="center">
+  <a href="https://ambient-robots.github.io/xlerobot_pro/"><img src="https://img.shields.io/badge/3D_Viewer-Joint_Control-FF6B6B?style=for-the-badge" alt="3D Viewer"/></a>
+</p>
+<p align="center">
   <a href="https://github.com/Vector-Wangel/XLeRobot"><img src="https://img.shields.io/badge/XLeRobot-upstream-gray?style=for-the-badge" alt="XLeRobot"/></a>
   <a href="https://github.com/pollen-robotics/PincOpen"><img src="https://img.shields.io/badge/PincOpen-gripper-gray?style=for-the-badge" alt="PincOpen"/></a>
 </p>
@@ -46,6 +49,7 @@ xlerobot_pinc/
 ├── examples/xlerobot_pinc/             # Teleop, VR, inference scripts
 ├── xlerobot_pinc_urdf/                       # Bundled URDF model & 3D assets
 ├── XLeVR/                              # VR teleoperation module
+├── web/                               # Interactive 3D joint control viewer (GitHub Pages)
 ├── hardware/                           # Hardware docs, source refs, custom part exports
 ├── setup_lerobot_symlinks.sh           # Symlink installer for lerobot
 ├── load_xlerobot_env.sh                # Env loader from JSON config
@@ -63,6 +67,18 @@ The URDF models are bundled in [`xlerobot_pinc_urdf/`](xlerobot_pinc_urdf/) and 
 - **`xlerobot.urdf`** — mobile base platform with dual arm mounts
 
 All three are assembled together for full robot visualization; only `robot.urdf` is used for IK. Run `gen_local_paths.sh` inside the URDF directory to generate local-path variants.
+
+### 3D Viewer
+
+An interactive browser-based joint control viewer is available at [ambient-robots.github.io/xlerobot_pro](https://ambient-robots.github.io/xlerobot_pro/).
+
+To run locally:
+
+```bash
+cd web
+npm install
+npm run dev
+```
 
 <details>
 <summary>Bill of Materials (BOM)</summary>
