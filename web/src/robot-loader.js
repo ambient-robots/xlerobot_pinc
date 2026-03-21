@@ -66,13 +66,22 @@ function upgradeMaterials(robot) {
  * - robot.urdf x2 (left + right arms)
  * - gripper.urdf x2 (left + right grippers)
  */
+async function tryLoadURDF(url) {
+  try {
+    return await loadURDF(url);
+  } catch (err) {
+    console.warn(`Failed to load ${url}:`, err);
+    return null;
+  }
+}
+
 export async function loadRobotAssembly(scene) {
   const [base, leftArm, rightArm, leftGripper, rightGripper] = await Promise.all([
     loadURDF('./xlerobot.urdf'),
     loadURDF('./robot.urdf'),
     loadURDF('./robot.urdf'),
-    loadURDF('./gripper.urdf'),
-    loadURDF('./gripper.urdf'),
+    tryLoadURDF('./gripper.urdf'),
+    tryLoadURDF('./gripper.urdf'),
   ]);
 
   // Attach arms to base mount points
@@ -86,21 +95,20 @@ export async function loadRobotAssembly(scene) {
   else console.warn('so107_right_base not found in base URDF');
 
   // Attach grippers to arm endpoints
-  const leftGripperMount = leftArm.links['interface_arm100'];
-  const rightGripperMount = rightArm.links['interface_arm100'];
+  if (leftGripper) {
+    const leftGripperMount = leftArm.links['gripper_frame_link'];
+    if (leftGripperMount) leftGripperMount.add(leftGripper);
+  }
 
-  if (leftGripperMount) leftGripperMount.add(leftGripper);
-  else console.warn('interface_arm100 not found in left arm URDF');
-
-  if (rightGripperMount) rightGripperMount.add(rightGripper);
-  else console.warn('interface_arm100 not found in right arm URDF');
+  if (rightGripper) {
+    const rightGripperMount = rightArm.links['gripper_frame_link'];
+    if (rightGripperMount) rightGripperMount.add(rightGripper);
+  }
 
   // Upgrade all materials for premium rendering
-  upgradeMaterials(base);
-  upgradeMaterials(leftArm);
-  upgradeMaterials(rightArm);
-  upgradeMaterials(leftGripper);
-  upgradeMaterials(rightGripper);
+  for (const robot of [base, leftArm, rightArm, leftGripper, rightGripper]) {
+    if (robot) upgradeMaterials(robot);
+  }
 
   // Rotate from Z-up (URDF) to Y-up (Three.js)
   base.rotation.x = -Math.PI / 2;
