@@ -4,7 +4,7 @@ import * as THREE from 'three';
 
 function createLoader() {
   const loader = new URDFLoader();
-  loader.packages = '';
+  loader.packages = new URL('./', window.location.href).href;
 
   loader.loadMeshCb = (path, manager, onComplete) => {
     const stlLoader = new STLLoader(manager);
