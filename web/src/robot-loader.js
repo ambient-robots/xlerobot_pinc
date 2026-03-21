@@ -95,14 +95,18 @@ export async function loadRobotAssembly(scene) {
   else console.warn('so107_right_base not found in base URDF');
 
   // Attach grippers to arm endpoints
-  if (leftGripper) {
-    const leftGripperMount = leftArm.links['gripper_frame_link'];
-    if (leftGripperMount) leftGripperMount.add(leftGripper);
-  }
-
-  if (rightGripper) {
-    const rightGripperMount = rightArm.links['gripper_frame_link'];
-    if (rightGripperMount) rightGripperMount.add(rightGripper);
+  // The repo's gripper_frame_link has rpy="0 π/2 0", but the gripper URDF
+  // was authored for rpy="0 π 0". Apply a corrective rotation (π/2 around Y)
+  // and position offset to align properly.
+  for (const [arm, gripper] of [[leftArm, leftGripper], [rightArm, rightGripper]]) {
+    if (!gripper) continue;
+    const mount = arm.links['gripper_frame_link'];
+    if (!mount) continue;
+    const offset = new THREE.Group();
+    offset.rotation.set(0, Math.PI / 2, 0);
+    offset.position.set(-0.123609, 0, 0);
+    offset.add(gripper);
+    mount.add(offset);
   }
 
   // Upgrade all materials for premium rendering
