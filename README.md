@@ -7,7 +7,7 @@
   <a href="https://cad.onshape.com/documents/96925cf817c1a878a85e838a/w/65e84f84222e56821484522f/e/8df6a6c93d54b1b95e807d87"><img src="https://img.shields.io/badge/Onshape-Platform-FFD93D?style=for-the-badge" alt="Onshape Platform"/></a>
 </p>
 <p align="center">
-  <a href="https://ambient-robots.github.io/xlerobot_pro/"><img src="https://img.shields.io/badge/3D_Viewer-Joint_Control-FF6B6B?style=for-the-badge" alt="3D Viewer"/></a>
+  <a href="https://flolay.github.io/xlerobot_pinc_static_control/"><img src="https://img.shields.io/badge/3D_Viewer-Joint_Control-FF6B6B?style=for-the-badge" alt="3D Viewer"/></a>
 </p>
 <p align="center">
   <a href="https://github.com/Vector-Wangel/XLeRobot"><img src="https://img.shields.io/badge/XLeRobot-upstream-gray?style=for-the-badge" alt="XLeRobot"/></a>
