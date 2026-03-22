@@ -70,7 +70,7 @@ All three are assembled together for full robot visualization; only `robot.urdf`
 
 ### 3D Viewer
 
-An interactive browser-based joint control viewer is available at [ambient-robots.github.io/xlerobot_pro](https://ambient-robots.github.io/xlerobot_pro/).
+An interactive browser-based joint control viewer is available at [ambient-robots.github.io/xlerobot_pro](https://ambient-robots.github.io/xlerobot_pinc/).
 
 To run locally:
 
