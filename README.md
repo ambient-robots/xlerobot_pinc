@@ -116,7 +116,7 @@ npm run dev
 | # | Component | Qty | Unit Price (EUR) | Total (EUR) | Link | Comment |
 |---|-----------|-----|-----------------|-----------|------|---------|
 | 9 | USB-C to USB-A Cable (Anker, 1.8 m) | 2 | 3.43 | 6.86 | [Amazon.de](https://www.amazon.de/Anker-doppelt-geflochtenes-Ladekabel-Samsung-Schwarz/dp/B07DC5PPFV) | |
-| 10 | JST Wire Connector 5264 | 1 | ~1.79 | ~1.79 | [Aliexpress.com](https://de.aliexpress.com/item/1005005377748783.html?spm=a2g0o.order_list.order_list_main.5.3d081802uiYRtp&gatewayAdapt=glo2deu) | For Pan-Tilt motor connections |
+| 10 | JST Wire Connector 5264 3P | 1 | ~1.79 | ~1.79 | [Aliexpress.com](https://de.aliexpress.com/item/1005005377748783.html?spm=a2g0o.order_list.order_list_main.5.3d081802uiYRtp&gatewayAdapt=glo2deu) | For Pan-Tilt motor connections. Watch out that you buy the 3P connectors! |
 | 11 | 3-Pin Extension Cable | 1 | ~5.50 | ~5.50 | [Amazon.de](https://www.amazon.de/gp/product/B0F88H5DLC) | For Pan-Tilt motor connections |
 
 ### Grippers
