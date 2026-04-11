@@ -9,11 +9,13 @@ import time
 import logging
 import traceback
 import numpy as np
+import concurrent.futures
 
 from lerobot.utils.quadratic_spline_via_ipol import Via, Limits, QuadraticSplineInterpolator
 from lerobot.utils.robot_utils import precise_sleep
 from lerobot.robots.xlerobot_pinc import XLerobotPincConfig, XLerobotPinc
 
+from openpi_client import rtc as rtc_utils
 from openpi_client import image_tools
 from openpi_client import websocket_client_policy
 
@@ -71,8 +73,16 @@ OPENPI_REMOTE_SERVER_IP = "192.168.0.63"
 FPS = 50
 LOCAL_INFERENCE = False
 
+# Real-time chunking parameters
+ACTION_HORIZON = 50
+EXECUTE_HORIZON = 20
+DEFAULT_DELAY_STEPS = 6
+PREFIX_ATTENTION_SCHEDULE = "exp"
+MAX_GUIDANCE_WEIGHT = 5.0
+NUM_STEPS = 10
+
 class SimpleControlArm:
-    def __init__(self, joint_map, initial_obs, prefix="left", kp=0.98):
+    def __init__(self, joint_map, initial_obs, prefix="left", kp=0.85):
         self.joint_map = joint_map
         self.prefix = prefix
         self.kp = kp
@@ -342,7 +352,9 @@ def main():
         print("🔧 Initializing Policy Server...")
         openpi_server_ip = OPENPI_LOCAL_SERVER_IP if LOCAL_INFERENCE else OPENPI_REMOTE_SERVER_IP
         client = websocket_client_policy.WebsocketClientPolicy(host=openpi_server_ip, port=8000)
-        action_horizon = 50
+        metadata = client.get_server_metadata()
+        if "infer_realtime_chunk" not in metadata.get("supported_methods", []):
+            raise RuntimeError("Server does not support infer_realtime_chunk")
 
         # Initiailize events
         events = {
@@ -359,48 +371,113 @@ def main():
             input("🔧Press ENTER to start the next episode ...")
             print(f"✅ Start episode: {inference_episodes}")
 
-            while timestamp < EPISODE_TIME_SEC:
-                pressed_keys = set(keyboard.get_action().keys())
-                if 'q' in pressed_keys:
-                    events["stop_inference"] = True
-                    break
-                if 'w' in pressed_keys:
-                    events["reset_episode"] = True
-                    break
+            bootstrap_obs = build_policy_observation(robot)
+            bootstrap = client.infer_realtime_chunk(
+                bootstrap_obs,
+                execute_horizon=EXECUTE_HORIZON,
+                prefix_attention_schedule=PREFIX_ATTENTION_SCHEDULE,
+                max_guidance_weight=MAX_GUIDANCE_WEIGHT,
+                num_steps=NUM_STEPS,
+            )
+            current_external = bootstrap["actions"]
+            current_internal = bootstrap["rtc_internal_actions"]
+            observed_delays = [DEFAULT_DELAY_STEPS]
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                while timestamp < EPISODE_TIME_SEC:
+                    pressed_keys = set(keyboard.get_action().keys())
+                    if 'q' in pressed_keys:
+                        events["stop_inference"] = True
+                        break
+                    if 'w' in pressed_keys:
+                        events["reset_episode"] = True
+                        break
+                    
+                    observation = build_policy_observation(robot)
+                    estimated_delay = rtc_utils.estimate_inference_delay(
+                        observed_delays,
+                        default=DEFAULT_DELAY_STEPS,
+                    )
+
+                    future = executor.submit(
+                        client.infer_realtime_chunk,
+                        observation,
+                        prev_internal_actions=current_internal,
+                        inference_delay=estimated_delay,
+                        execute_horizon=EXECUTE_HORIZON,
+                        prefix_attention_schedule=PREFIX_ATTENTION_SCHEDULE,
+                        max_guidance_weight=MAX_GUIDANCE_WEIGHT,
+                        num_steps=NUM_STEPS,
+                    )
+
+                    executed_prefix = 0
+
+                    while executed_prefix < EXECUTE_HORIZON and not future.done():
+                        pressed_keys = set(keyboard.get_action().keys())
+                        if "q" in pressed_keys:
+                            events["stop_inference"] = True
+                            break
+                        if "w" in pressed_keys:
+                            events["reset_episode"] = True
+                            break
+
+                        start_loop_t = time.perf_counter()
+                        target = current_external[executed_prefix]
+                        execute_target(robot, left_arm, right_arm, target)
+                        dt_s = time.perf_counter() - start_loop_t
+                        precise_sleep(1 / FPS - dt_s)
+                        executed_prefix += 1
+
+                    if events["stop_inference"] or events["reset_episode"]:
+                        break
+
+                    next_result = future.result()
+                    next_external = next_result["actions"]
+                    next_internal = next_result["rtc_internal_actions"]
+
+                    actual_delay = min(executed_prefix, EXECUTE_HORIZON)
+                    observed_delays.append(actual_delay)
+
+                    hybrid_chunk = rtc_utils.splice_action_chunks(
+                        current_external,
+                        next_external,
+                        inference_delay=actual_delay,
+                        execute_horizon=EXECUTE_HORIZON,
+                    )
+
+                    for t in range(actual_delay, EXECUTE_HORIZON):
+                        pressed_keys = set(keyboard.get_action().keys())
+                        if "q" in pressed_keys:
+                            events["stop_inference"] = True
+                            break
+                        if "w" in pressed_keys:
+                            events["reset_episode"] = True
+                            break
+
+                        start_loop_t = time.perf_counter()
+                        target = hybrid_chunk[t]
+                        execute_target(robot, left_arm, right_arm, target)
+                        dt_s = time.perf_counter() - start_loop_t
+                        precise_sleep(1 / FPS - dt_s)
+
+                    if events["stop_inference"] or events["reset_episode"]:
+                        break
+
+                    current_external = rtc_utils.shift_chunk(next_external, EXECUTE_HORIZON)
+                    current_internal = rtc_utils.shift_chunk(next_internal, EXECUTE_HORIZON)
+                    timestamp = time.perf_counter() - start_episode_t
+
+                if inference_episodes < NUM_EPISODES - 1:
+                    print(f"✅ Reset environment after episode: {inference_episodes}")
+                    joint_ipol.plan_to_target(robot, left_arm, right_arm, ctrl_freq=FPS, target_positions=FULL_START_POS)   
+                    joint_ipol.execute_plan(robot, left_arm, right_arm)
+
+                if events["reset_episode"]:
+                    events["reset_episode"] = False
+                    continue
                 
-                observation = build_policy_observation(robot)
-
-                print("Sent observation for inference")
-                start_infer_t = time.perf_counter()
-                response = client.infer(observation)
-                action_chunk = response["actions"]
-                policy_timing_infer_ms = response["policy_timing"]["infer_ms"]
-                server_timing_infer_ms = response["server_timing"]["infer_ms"]
-                client_timing_total_ms = (time.perf_counter() - start_infer_t )* 1e3
-                print(f"Policy timing: infer={policy_timing_infer_ms:.1f} ms")
-                print(f"Server timing: infer={server_timing_infer_ms:.1f} ms")
-                print(f"Client timing: total={client_timing_total_ms:.1f} ms")
-
-                for t in range(action_horizon):
-                    start_loop_t = time.perf_counter()
-                    target = action_chunk[t]
-                    execute_target(robot, left_arm, right_arm, target)
-                    dt_s = time.perf_counter() - start_loop_t
-                    precise_sleep(1 / FPS - dt_s)
-
-                timestamp = time.perf_counter() - start_episode_t
-
-            if inference_episodes < NUM_EPISODES - 1:
-                print(f"✅ Reset environment after episode: {inference_episodes}")
-                joint_ipol.plan_to_target(robot, left_arm, right_arm, ctrl_freq=FPS, target_positions=FULL_START_POS)   
-                joint_ipol.execute_plan(robot, left_arm, right_arm)
-
-            if events["reset_episode"]:
-                events["reset_episode"] = False
-                continue
-            
-            print(f"🚀 Finished episode: {inference_episodes}")
-            inference_episodes += 1
+                print(f"🚀 Finished episode: {inference_episodes}")
+                inference_episodes += 1
         
     except Exception as e:
         print(f"Program execution failed: {e}")
