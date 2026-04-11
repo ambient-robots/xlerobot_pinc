@@ -5,6 +5,8 @@ Uses handle_vr_input with delta action control
 """
 
 # Standard library imports
+from collections import deque
+import math
 import time
 import logging
 import traceback
@@ -70,16 +72,21 @@ EPISODE_TIME_SEC = 300
 OPENPI_LOCAL_SERVER_IP = "127.0.1.1"
 OPENPI_REMOTE_SERVER_IP = "192.168.0.63"
 
-FPS = 50
+FPS = 60
 LOCAL_INFERENCE = False
 
 # Real-time chunking parameters
 ACTION_HORIZON = 50
-EXECUTE_HORIZON = 20
-DEFAULT_DELAY_STEPS = 6
+MIN_EXECUTE_HORIZON = 12
+DELAY_BUFFER_SIZE = 10
+DEFAULT_DELAY_STEPS = 8
+WARMUP_CYCLES_TO_IGNORE = 2
+DELAY_ESTIMATE_PERCENTILE = 90
+DELAY_ESTIMATE_SAFETY_STEPS = 1
 PREFIX_ATTENTION_SCHEDULE = "exp"
-MAX_GUIDANCE_WEIGHT = 5.0
-NUM_STEPS = 10
+MAX_GUIDANCE_WEIGHT = 4.0
+NUM_STEPS = 5
+PRINT_RTC_TIMING = True
 
 class SimpleControlArm:
     def __init__(self, joint_map, initial_obs, prefix="left", kp=0.85):
@@ -300,6 +307,113 @@ def execute_target(robot, left_arm, right_arm, target):
     right_action, _ = right_arm.p_control_action(robot)
     robot.send_action({**left_action, **right_action})
 
+
+def choose_execute_horizon(estimated_delay: int) -> int:
+    if estimated_delay < 0:
+        raise ValueError(f"estimated_delay must be non-negative, got {estimated_delay}")
+    if estimated_delay > ACTION_HORIZON // 2:
+        raise ValueError(
+            "estimated_delay violates the RTC constraint d <= s <= H - d: "
+            f"delay={estimated_delay}, action_horizon={ACTION_HORIZON}"
+        )
+    return min(max(estimated_delay, MIN_EXECUTE_HORIZON), ACTION_HORIZON - estimated_delay)
+
+
+def _control_period_ms() -> float:
+    return 1e3 / FPS
+
+
+def _delay_steps_from_ms(delay_ms: float) -> int:
+    # Round up to the next control step so the configured delay is conservative.
+    return max(0, math.ceil(delay_ms / _control_period_ms()))
+
+
+def summarize_delay_history(delay_history: deque[int]) -> dict[str, float] | None:
+    if not delay_history:
+        return None
+
+    delays = np.asarray(delay_history, dtype=float)
+    return {
+        "count": float(delays.size),
+        "min": float(np.min(delays)),
+        "median": float(np.median(delays)),
+        "p95": float(np.percentile(delays, 95)),
+        "max": float(np.max(delays)),
+    }
+
+
+def estimate_delay_steps(delay_history: deque[int], *, default: int) -> int:
+    if not delay_history:
+        return default
+
+    delays = np.asarray(delay_history, dtype=float)
+    percentile_delay = float(np.percentile(delays, DELAY_ESTIMATE_PERCENTILE))
+    estimated_delay = int(math.ceil(percentile_delay)) + DELAY_ESTIMATE_SAFETY_STEPS
+    estimated_delay = max(default, estimated_delay)
+    return min(estimated_delay, ACTION_HORIZON // 2)
+
+
+def print_rtc_timing(
+    *,
+    label: str,
+    request_start_t: float,
+    request_done_t: float,
+    estimated_delay: int | None,
+    execute_horizon: int,
+    executed_prefix: int | None = None,
+    overran_horizon: bool = False,
+    response: dict | None = None,
+    delay_history: deque | None = None,
+    history_note: str | None = None,
+) -> None:
+    if not PRINT_RTC_TIMING:
+        return
+
+    wall_ms = (request_done_t - request_start_t) * 1e3
+    wall_steps = wall_ms / _control_period_ms()
+    suggested_delay_steps = _delay_steps_from_ms(wall_ms)
+
+    message = (
+        f"[RTC][{label}] wall={wall_ms:.1f} ms ({wall_steps:.2f} steps @ {FPS} Hz) | "
+        f"suggested_delay_steps={suggested_delay_steps} | execute_horizon={execute_horizon}"
+    )
+    if estimated_delay is not None:
+        message += f" | estimated_delay={estimated_delay}"
+    if executed_prefix is not None:
+        message += f" | executed_before_ready={executed_prefix}"
+
+    if response is not None:
+        policy_timing = response.get("policy_timing", {})
+        server_timing = response.get("server_timing", {})
+        policy_ms = policy_timing.get("infer_ms")
+        server_ms = server_timing.get("infer_ms")
+        if policy_ms is not None:
+            message += f" | policy_infer={policy_ms:.1f} ms"
+        if server_ms is not None:
+            message += f" | server_infer={server_ms:.1f} ms"
+
+    print(message)
+
+    if delay_history is not None:
+        print(f"[RTC][{label}] recent_delay_history={list(delay_history)}")
+        delay_stats = summarize_delay_history(delay_history)
+        if delay_stats is not None:
+            next_estimate = estimate_delay_steps(delay_history, default=DEFAULT_DELAY_STEPS)
+            print(
+                f"[RTC][{label}] delay_stats count={int(delay_stats['count'])} "
+                f"min={delay_stats['min']:.0f} median={delay_stats['median']:.1f} "
+                f"p95={delay_stats['p95']:.1f} max={delay_stats['max']:.0f} "
+                f"next_estimate={next_estimate}"
+            )
+    if history_note is not None:
+        print(f"[RTC][{label}] history_note={history_note}")
+    if overran_horizon:
+        print(
+            f"[RTC][{label}] WARNING: inference exceeded execute_horizon={execute_horizon}. "
+            f"Consider increasing MIN_EXECUTE_HORIZON / DEFAULT_DELAY_STEPS or reducing latency."
+        )
+
+
 def main():
     print("XLerobot Pro Pi0.5 Inference Example")
     print("="*50)
@@ -362,6 +476,12 @@ def main():
             "reset_episode": False,    # Press key w: reset episode
         }
         print("✅ Policy server ready")
+        if PRINT_RTC_TIMING:
+            print(f"[RTC] control_period={_control_period_ms():.1f} ms at FPS={FPS}")
+            print(
+                f"[RTC] delay_estimator=p{DELAY_ESTIMATE_PERCENTILE}+{DELAY_ESTIMATE_SAFETY_STEPS} "
+                f"| warmup_cycles_ignored={WARMUP_CYCLES_TO_IGNORE} | delay_buffer_size={DELAY_BUFFER_SIZE}"
+            )
 
         print("Starting inference loop...")
         inference_episodes = 0
@@ -372,16 +492,28 @@ def main():
             print(f"✅ Start episode: {inference_episodes}")
 
             bootstrap_obs = build_policy_observation(robot)
+            bootstrap_execute_horizon = choose_execute_horizon(DEFAULT_DELAY_STEPS)
+            bootstrap_start_t = time.perf_counter()
             bootstrap = client.infer_realtime_chunk(
                 bootstrap_obs,
-                execute_horizon=EXECUTE_HORIZON,
+                execute_horizon=bootstrap_execute_horizon,
                 prefix_attention_schedule=PREFIX_ATTENTION_SCHEDULE,
                 max_guidance_weight=MAX_GUIDANCE_WEIGHT,
                 num_steps=NUM_STEPS,
             )
+            bootstrap_done_t = time.perf_counter()
+            print_rtc_timing(
+                label="bootstrap",
+                request_start_t=bootstrap_start_t,
+                request_done_t=bootstrap_done_t,
+                estimated_delay=DEFAULT_DELAY_STEPS,
+                execute_horizon=bootstrap_execute_horizon,
+                response=bootstrap,
+            )
             current_external = bootstrap["actions"]
             current_internal = bootstrap["rtc_internal_actions"]
-            observed_delays = [DEFAULT_DELAY_STEPS]
+            observed_delays = deque(maxlen=DELAY_BUFFER_SIZE)
+            completed_cycles = 0
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
                 while timestamp < EPISODE_TIME_SEC:
@@ -394,17 +526,16 @@ def main():
                         break
                     
                     observation = build_policy_observation(robot)
-                    estimated_delay = rtc_utils.estimate_inference_delay(
-                        observed_delays,
-                        default=DEFAULT_DELAY_STEPS,
-                    )
+                    estimated_delay = estimate_delay_steps(observed_delays, default=DEFAULT_DELAY_STEPS)
+                    execute_horizon = choose_execute_horizon(estimated_delay)
 
+                    request_start_t = time.perf_counter()
                     future = executor.submit(
                         client.infer_realtime_chunk,
                         observation,
                         prev_internal_actions=current_internal,
                         inference_delay=estimated_delay,
-                        execute_horizon=EXECUTE_HORIZON,
+                        execute_horizon=execute_horizon,
                         prefix_attention_schedule=PREFIX_ATTENTION_SCHEDULE,
                         max_guidance_weight=MAX_GUIDANCE_WEIGHT,
                         num_steps=NUM_STEPS,
@@ -412,7 +543,7 @@ def main():
 
                     executed_prefix = 0
 
-                    while executed_prefix < EXECUTE_HORIZON and not future.done():
+                    while executed_prefix < execute_horizon and not future.done():
                         pressed_keys = set(keyboard.get_action().keys())
                         if "q" in pressed_keys:
                             events["stop_inference"] = True
@@ -431,21 +562,49 @@ def main():
                     if events["stop_inference"] or events["reset_episode"]:
                         break
 
+                    overran_horizon = executed_prefix >= execute_horizon and not future.done()
                     next_result = future.result()
+                    request_done_t = time.perf_counter()
                     next_external = next_result["actions"]
                     next_internal = next_result["rtc_internal_actions"]
 
-                    actual_delay = min(executed_prefix, EXECUTE_HORIZON)
-                    observed_delays.append(actual_delay)
+                    actual_delay = min(executed_prefix, execute_horizon)
+                    history_note = None
+                    if completed_cycles < WARMUP_CYCLES_TO_IGNORE:
+                        history_note = (
+                            f"skipped_delay_sample={actual_delay} because cycle "
+                            f"{completed_cycles + 1} is within warmup ignore window"
+                        )
+                    elif overran_horizon:
+                        history_note = (
+                            f"skipped_delay_sample={actual_delay} because this cycle overran "
+                            f"execute_horizon={execute_horizon}"
+                        )
+                    else:
+                        observed_delays.append(actual_delay)
+
+                    print_rtc_timing(
+                        label="cycle",
+                        request_start_t=request_start_t,
+                        request_done_t=request_done_t,
+                        estimated_delay=estimated_delay,
+                        execute_horizon=execute_horizon,
+                        executed_prefix=executed_prefix,
+                        overran_horizon=overran_horizon,
+                        response=next_result,
+                        delay_history=observed_delays,
+                        history_note=history_note,
+                    )
+                    completed_cycles += 1
 
                     hybrid_chunk = rtc_utils.splice_action_chunks(
                         current_external,
                         next_external,
                         inference_delay=actual_delay,
-                        execute_horizon=EXECUTE_HORIZON,
+                        execute_horizon=execute_horizon,
                     )
 
-                    for t in range(actual_delay, EXECUTE_HORIZON):
+                    for t in range(actual_delay, execute_horizon):
                         pressed_keys = set(keyboard.get_action().keys())
                         if "q" in pressed_keys:
                             events["stop_inference"] = True
@@ -463,8 +622,8 @@ def main():
                     if events["stop_inference"] or events["reset_episode"]:
                         break
 
-                    current_external = rtc_utils.shift_chunk(next_external, EXECUTE_HORIZON)
-                    current_internal = rtc_utils.shift_chunk(next_internal, EXECUTE_HORIZON)
+                    current_external = rtc_utils.shift_chunk(next_external, execute_horizon)
+                    current_internal = rtc_utils.shift_chunk(next_internal, execute_horizon)
                     timestamp = time.perf_counter() - start_episode_t
 
                 if inference_episodes < NUM_EPISODES - 1:
