@@ -3,9 +3,15 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Vector-Wangel/XLeRobot"><img src="https://img.shields.io/badge/XLeRobot-upstream-blue?style=for-the-badge" alt="XLeRobot"/></a>
-  <a href="https://github.com/pollen-robotics/PincOpen"><img src="https://img.shields.io/badge/PincOpen-gripper-green?style=for-the-badge" alt="PincOpen"/></a>
-  <a href="https://github.com/huggingface/lerobot"><img src="https://img.shields.io/badge/SO107-arm-orange?style=for-the-badge" alt="SO107"/></a>
+  <a href="https://cad.onshape.com/documents/497bc5aee616bc3122c03e8e/w/01522a834421a6d358114bf2/e/2197a655705492fa3028d295?renderMode=0&uiState=69be6962b2d253007fa0bfa1"><img src="https://img.shields.io/badge/Onshape-Arm-4ECDC4?style=for-the-badge" alt="Onshape Arm"/></a>
+  <a href="https://cad.onshape.com/documents/96925cf817c1a878a85e838a/w/65e84f84222e56821484522f/e/8df6a6c93d54b1b95e807d87"><img src="https://img.shields.io/badge/Onshape-Platform-FFD93D?style=for-the-badge" alt="Onshape Platform"/></a>
+</p>
+<p align="center">
+  <a href="https://ambient-robots.github.io/xlerobot_pinc/"><img src="https://img.shields.io/badge/3D_Viewer-Joint_Control-FF6B6B?style=for-the-badge" alt="3D Viewer"/></a>
+</p>
+<p align="center">
+  <a href="https://github.com/Vector-Wangel/XLeRobot"><img src="https://img.shields.io/badge/XLeRobot-upstream-gray?style=for-the-badge" alt="XLeRobot"/></a>
+  <a href="https://github.com/pollen-robotics/PincOpen"><img src="https://img.shields.io/badge/PincOpen-gripper-gray?style=for-the-badge" alt="PincOpen"/></a>
 </p>
 
 ---
@@ -43,6 +49,7 @@ xlerobot_pinc/
 ├── examples/xlerobot_pinc/             # Teleop, VR, inference scripts
 ├── xlerobot_pinc_urdf/                       # Bundled URDF model & 3D assets
 ├── XLeVR/                              # VR teleoperation module
+├── web/                               # Interactive 3D joint control viewer (GitHub Pages)
 ├── hardware/                           # Hardware docs, source refs, custom part exports
 ├── setup_lerobot_symlinks.sh           # Symlink installer for lerobot
 ├── load_xlerobot_env.sh                # Env loader from JSON config
@@ -60,6 +67,18 @@ The URDF models are bundled in [`xlerobot_pinc_urdf/`](xlerobot_pinc_urdf/) and 
 - **`xlerobot.urdf`** — mobile base platform with dual arm mounts
 
 All three are assembled together for full robot visualization; only `robot.urdf` is used for IK. Run `gen_local_paths.sh` inside the URDF directory to generate local-path variants.
+
+### 3D Viewer
+
+An interactive browser-based joint control viewer is available at [ambient-robots.github.io/xlerobot_pinc](https://ambient-robots.github.io/xlerobot_pinc/).
+
+To run locally:
+
+```bash
+cd web
+npm install
+npm run dev
+```
 
 <details>
 <summary>Bill of Materials (BOM)</summary>
@@ -97,7 +116,7 @@ All three are assembled together for full robot visualization; only `robot.urdf`
 | # | Component | Qty | Unit Price (EUR) | Total (EUR) | Link | Comment |
 |---|-----------|-----|-----------------|-----------|------|---------|
 | 9 | USB-C to USB-A Cable (Anker, 1.8 m) | 2 | 3.43 | 6.86 | [Amazon.de](https://www.amazon.de/Anker-doppelt-geflochtenes-Ladekabel-Samsung-Schwarz/dp/B07DC5PPFV) | |
-| 10 | JST Wire Connector Kit | 1 | ~7.50 | ~7.50 | [Amazon.de](https://www.amazon.de/Männlich-Weiblich-Adapterkabel-Verbinder-Platinenstecker/dp/B0BZHR5NCR) | For Pan-Tilt motor connections |
+| 10 | JST Wire Connector 5264 3P | 1 | ~1.79 | ~1.79 | [Aliexpress.com](https://de.aliexpress.com/item/1005005377748783.html?spm=a2g0o.order_list.order_list_main.5.3d081802uiYRtp&gatewayAdapt=glo2deu) | For Pan-Tilt motor connections. Watch out that you buy the 3P connectors! |
 | 11 | 3-Pin Extension Cable | 1 | ~5.50 | ~5.50 | [Amazon.de](https://www.amazon.de/gp/product/B0F88H5DLC) | For Pan-Tilt motor connections |
 
 ### Grippers
@@ -113,9 +132,9 @@ The gripper BOM can be found in the [PincOpen repository](https://github.com/pol
 | Servo Motors | ~490.00 |
 | Servo Control & Power | ~51.20 |
 | Vision / Cameras | ~789.00 |
-| Cables & Connectors | ~19.86 |
+| Cables & Connectors | ~14.15 |
 | 2x [PincOpen Gripper](https://github.com/pollen-robotics/PincOpen?tab=readme-ov-file#bom-bill-of-materials) | ~52.92 |
-| **Grand Total** | **~1,402.98** |
+| **Grand Total** | **~1,397.27** |
 
 > Prices are approximate and may vary. The mobile platform is not included; see [XLerobot docs](https://xlerobot.readthedocs.io/en/latest/hardware/getting_started/material.html) for platform pricing.
 

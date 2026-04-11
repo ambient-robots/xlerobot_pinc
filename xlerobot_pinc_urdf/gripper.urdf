@@ -122,7 +122,7 @@
   </link>
   <joint name="gripper_frame_fixed_joint" type="fixed">
     <origin xyz="0.0 0.0 0.123609" rpy="0 0 0"/>
-    <parent link="gripper"/>
+    <parent link="cam"/>
     <child link="tcp_link"/>
     <axis xyz="0 0 0"/>
   </joint>

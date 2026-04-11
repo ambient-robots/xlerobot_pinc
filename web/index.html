@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>XLerobot Pinc — Joint Control</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>" />
+</head>
+<body class="bg-[#f5f0eb] overflow-hidden touch-none">
+  <div id="viewer" class="w-full h-screen"></div>
+
+  <div id="loading" class="fixed inset-0 flex items-center justify-center bg-[#f5f0eb]/90 z-[100]">
+    <div class="text-center">
+      <div class="w-8 h-8 border-2 border-stone-300 border-t-stone-600 rounded-full animate-spin mx-auto mb-3"></div>
+      <p class="text-sm text-stone-500 font-medium tracking-wide">Loading robot model…</p>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
