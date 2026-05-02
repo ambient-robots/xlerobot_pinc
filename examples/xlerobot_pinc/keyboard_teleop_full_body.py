@@ -102,7 +102,7 @@ FULL_START_POS = {
 }
 
 FPS = 50
-LOG_RERUN = True
+LOG_RERUN = False
 
 class SimpleHeadControl:
     def __init__(self, joint_map, kp=0.8):
@@ -128,13 +128,13 @@ class SimpleHeadControl:
         
         # 1) Read current joint positions (calibrated if provided)
         obs = robot.bus_right_head.sync_read("Present_Position", robot.head_motors)
-        print(f"[HEAD IPOL] Current joint positions: {obs}")
+        logger.debug(f"[HEAD IPOL] Current joint positions: {obs}")
 
         # 2) choose names in the order of home_positions, filter to those present in obs
         names = [n for n in target_positions if n in obs]
         missing = [n for n in target_positions if n not in obs]
         if missing:
-            print(f"[HEAD IPOL] Warning: skipping joints missing in observation: {missing}")
+            logger.debug(f"[HEAD IPOL] Warning: skipping joints missing in observation: {missing}")
 
         # 3) build current/goal vectors in that SAME order (no sorting)
         q_now = []
@@ -176,7 +176,7 @@ class SimpleHeadControl:
         t, q, qd, qdd = ipol.resample(dt)  # will end ~ at `duration`
 
         # 8) Stream to the robot
-        print(f"[HEAD IPOL] Streaming ipol trajectory: {len(t)} steps at {control_freq:.1f} Hz; "
+        logger.debug(f"[HEAD IPOL] Streaming ipol trajectory: {len(t)} steps at {control_freq:.1f} Hz; "
             f"planned duration ≈ {t[-1]:.3f}s (requested {duration:.3f}s)")
         
         t0 = time.perf_counter()
@@ -197,8 +197,8 @@ class SimpleHeadControl:
                 time.sleep(next_tick - now)
         
         self.target_positions = target_positions.copy()
-        print("[HEAD IPOL] Reached end of ipol trajectory.")
-        print(f"[HEAD IPOL] Reset head target positions to: {self.target_positions}")
+        logger.debug("[HEAD IPOL] Reached end of ipol trajectory.")
+        logger.debug(f"[HEAD IPOL] Reset head target positions to: {self.target_positions}")
         
     def handle_keys(self, key_state):
         if not any(key_state.values()):
@@ -212,8 +212,8 @@ class SimpleHeadControl:
             self.target_positions["head_tilt"] += self.degree_step
         elif key_state.get('head_tilt-'):
             self.target_positions["head_tilt"] -= self.degree_step            
-        print(f"[HEAD TELEOP] head_pan: {self.target_positions['head_pan']}")
-        print(f"[HEAD TELEOP] head_tilt: {self.target_positions['head_tilt']}")
+        logger.debug(f"[HEAD TELEOP] head_pan: {self.target_positions['head_pan']}")
+        logger.debug(f"[HEAD TELEOP] head_tilt: {self.target_positions['head_tilt']}")
 
     def p_control_action(self, robot):
         obs = robot.bus_right_head.sync_read("Present_Position", robot.head_motors)
@@ -223,7 +223,7 @@ class SimpleHeadControl:
             error = self.target_positions[motor] - current_obs
             control = self.kp * error
             action[f"{self.joint_map[motor]}.pos"] = current_obs + control
-        print(f"[HEAD CONTROL] Commanded actions: {action}")
+        logger.debug(f"[HEAD CONTROL] Commanded actions: {action}")
         return action
 
 class SimpleTeleopArm:
@@ -261,7 +261,7 @@ class SimpleTeleopArm:
                     use_latched_reference=False,
                 ),
                 EEBoundsAndSafety(
-                    end_effector_bounds={"min": [-0.5, -0.5, -0.5], "max": [0.5, 0.5, 0.5]},
+                    end_effector_bounds={"min": [-1.0, -1.0, -1.0], "max": [1.0, 1.0, 1.0]},
                     max_ee_step_m=0.03,
                 ),
                 GripperVelocityToJoint(
@@ -270,7 +270,7 @@ class SimpleTeleopArm:
                 InverseKinematicsEEToJoints(
                     kinematics=self.kinematics,
                     motor_names=list(self.target_positions.keys()),
-                    weights={"position": 1.0, "orientation": 0.2},
+                    weights={"position": 1.0, "orientation": 0.3},
                     initial_guess_current_joints=False,
                 ),
             ],
@@ -280,8 +280,8 @@ class SimpleTeleopArm:
         self.ref_action_when_disabled = None
     
         # Set the rad step and pos step in [m]
-        self.rad_step = 15 * (np.pi/180) / FPS
-        self.pos_step = 0.2 / FPS
+        self.rad_step = 30 * (np.pi/180) / FPS
+        self.pos_step = 0.15 / FPS
         self.gripper_vel_step = 1
 
     def move_to_target_with_ipol(self, robot, target_positions=None, duration=5.0, control_freq=200.0,
@@ -303,13 +303,13 @@ class SimpleTeleopArm:
         else:
             obs_raw = robot.bus_right_head.sync_read("Present_Position", robot.right_arm_motors)
         obs = {j: obs_raw[f"{self.joint_map[j]}"] for j in self.joint_map}
-        print(f"[{self.prefix.capitalize()} ARM IPOL] Current joint positions: {obs}")
+        logger.debug(f"[{self.prefix.capitalize()} ARM IPOL] Current joint positions: {obs}")
 
         # 2) choose names in the order of home_positions, filter to those present in obs
         names = [n for n in target_positions if n in obs]
         missing = [n for n in target_positions if n not in obs]
         if missing:
-            print(f"[{self.prefix.capitalize()} ARM IPOL] Warning: skipping joints missing in observation: {missing}")
+            logger.debug(f"[{self.prefix.capitalize()} ARM IPOL] Warning: skipping joints missing in observation: {missing}")
 
         # 3) build current/goal vectors in that SAME order (no sorting)
         q_now = []
@@ -351,7 +351,7 @@ class SimpleTeleopArm:
         t, q, qd, qdd = ipol.resample(dt)  # will end ~ at `duration`
 
         # 8) Stream to the robot
-        print(f"[{self.prefix.capitalize()} ARM IPOL] Streaming ipol trajectory: {len(t)} steps at {control_freq:.1f} Hz; "
+        logger.debug(f"[{self.prefix.capitalize()} ARM IPOL] Streaming ipol trajectory: {len(t)} steps at {control_freq:.1f} Hz; "
             f"planned duration ≈ {t[-1]:.3f}s (requested {duration:.3f}s)")
         
         t0 = time.perf_counter()
@@ -376,9 +376,9 @@ class SimpleTeleopArm:
             if now < next_tick:
                 time.sleep(next_tick - now)
         
-        print(f"[{self.prefix.capitalize()} ARM IPOL] Reached end of ipol trajectory.")
+        logger.info(f"[{self.prefix.capitalize()} ARM IPOL] Reached end of ipol trajectory.")
         self.target_positions = target_positions.copy()
-        print(f"[{self.prefix.capitalize()} ARM IPOL] Reset target positions to: {self.target_positions}")
+        logger.info(f"[{self.prefix.capitalize()} ARM IPOL] Reset target positions to: {self.target_positions}")
         self.ee_relative_to_robot_joints_processor.reset()
         self.ref_action_when_disabled = None
 
@@ -388,7 +388,7 @@ class SimpleTeleopArm:
         else:
             obs_raw = robot.bus_right_head.sync_read("Present_Position", robot.right_arm_motors)
         obs = {f"{j}.pos": obs_raw[self.joint_map[j]] for j in self.joint_map}
-        print(f"[{self.prefix.capitalize()} ARM TELEOP] Current joint positions: {obs}")
+        logger.debug(f"[{self.prefix.capitalize()} ARM TELEOP] Current joint positions: {obs}")
 
         target_action = {
             "enabled": False,
@@ -432,7 +432,7 @@ class SimpleTeleopArm:
         
         if any(key_state.values()):
             target_action["enabled"] = True
-        print(f"[{self.prefix.capitalize()} ARM TELEOP] Relative ee actions: {target_action}")
+        logger.debug(f"[{self.prefix.capitalize()} ARM TELEOP] Relative ee actions: {target_action}")
 
         if target_action["enabled"]:
             ref_action = self.ee_relative_to_robot_joints_processor((target_action, obs))
@@ -444,7 +444,7 @@ class SimpleTeleopArm:
         
         for key, ref_pos in ref_action.items():
             self.target_positions[key.removesuffix('.pos')] = ref_pos
-        print(f"[{self.prefix.capitalize()} ARM TELEOP] Ref joint positions: {self.target_positions}")
+        logger.debug(f"[{self.prefix.capitalize()} ARM TELEOP] Ref joint positions: {self.target_positions}")
 
     def p_control_action(self, robot):
         if self.prefix=="left":
@@ -458,7 +458,7 @@ class SimpleTeleopArm:
             control = self.kp * error
             action[f"{self.joint_map[j]}.pos"] = obs[j] + control
         
-        print(f"[{self.prefix.capitalize()} ARM CONTROL] Commanded actions: {action}")
+        logger.debug(f"[{self.prefix.capitalize()} ARM CONTROL] Commanded actions: {action}")
         return action
 
 
@@ -484,13 +484,13 @@ def move_to_target_full_body_with_ipol(
         left_obs = robot.bus_left_base.sync_read("Present_Position", robot.left_arm_motors)
         right_head_obs = robot.bus_right_head.sync_read("Present_Position", robot.right_arm_motors+robot.head_motors)
         obs = {**left_obs, **right_head_obs}
-        print(f"[FULL-BODY IPOL] Current joint positions: {obs}")
+        logger.info(f"[FULL-BODY IPOL] Current joint positions: {obs}")
 
         # 2) choose names in the order of home_positions, filter to those present in obs
         names = [n for n in target_positions if n in obs]
         missing = [n for n in target_positions if n not in obs]
         if missing:
-            print(f"[FULL-BODY IPOL] Warning: skipping joints missing in observation: {missing}")
+            logger.debug(f"[FULL-BODY IPOL] Warning: skipping joints missing in observation: {missing}")
 
         # 3) build current/goal vectors in that SAME order (no sorting)
         q_now = []
@@ -573,7 +573,7 @@ def move_to_target_full_body_with_ipol(
     
 
 def main():
-    robot_name = "ambient_xlerobot_pinc"
+    robot_name = "ambient_xlerobot_pinc_xl"
     try:
         robot_config = XLerobotPincConfig(
             id=robot_name,
@@ -623,7 +623,7 @@ def main():
             start = time.perf_counter()
 
             pressed_keys = set(keyboard.get_action().keys())
-            print(f"[MAIN] Pressed Keys: {pressed_keys}")
+            logger.debug(f"[MAIN] Pressed Keys: {pressed_keys}")
 
             # Move to home pose when stopped
             if '*' in pressed_keys:
@@ -666,7 +666,7 @@ def main():
             if robot.has_mobile_platform:
                 keyboard_keys = np.array(list(pressed_keys))
                 base_action = robot._from_keyboard_to_base_action(keyboard_keys) or {}
-                print(f"[MAIN] Base action: {base_action}")
+                logger.debug(f"[MAIN] Base action: {base_action}")
 
             action = {**left_action, **right_action, **head_action, **base_action}
             robot.send_action(action)
