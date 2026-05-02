@@ -102,28 +102,11 @@ class SimpleControlArm:
             obs[f"{bus_name}.pos"] = raw_value
             obs_no_prefix[short_name] = raw_value
 
-        # joint deadzone config
-        tick_deg = 360.0 / 4096.0  # ≈ 0.0879 deg
-        deadband_ticks = 1         # tune: 1..3
-        deadband_deg = deadband_ticks * tick_deg
-
         action = {}
         for j in self.target_positions:
-            q = float(obs_no_prefix[j])
-            q_des = float(self.target_positions[j])
-            error = q_des - q
-
-            if j != "gripper":
-                # joint deadzone (degrees)
-                if abs(error) <= deadband_deg:
-                    cmd = q  # hold position
-                else:
-                    cmd = q + self.kp * error
-            else:
-                # no deadzone for gripper (normalized [0,100])
-                cmd = q + self.kp * error
-
-            action[f"{self.joint_map[j]}.pos"] = cmd
+            q_mes = obs_no_prefix[j]
+            q_err = self.target_positions[j] - q_mes
+            action[f"{self.joint_map[j]}.pos"] = q_mes + self.kp * q_err
         
         logger.debug(f"[{self.prefix.capitalize()} ARM CONTROL] Commanded actions: {action}")
         return action, obs
