@@ -271,6 +271,12 @@ This also prepends the repo root to `PYTHONPATH`, so local imports such as `from
 
 </details>
 
+## Demo
+### Pi0.5 inference on XLerobot Pinc
+The task is to disassemble the LEGO build and put all pieces into the zippered bag.
+
+https://github.com/user-attachments/assets/dc60a4d6-ff1d-448c-97c1-260b37b396a8
+
 ## Acknowledgements
 
 `xlerobot_pinc` is extended from [XLeRobot](https://github.com/Vector-Wangel/XLeRobot). Both the robot platform and parts of the software stack build on that upstream project, including the bundled `XLeVR` VR teleoperation module.
