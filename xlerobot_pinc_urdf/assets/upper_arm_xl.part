@@ -1,0 +1,13 @@
+{
+    "configuration": "default",
+    "documentId": "4895b72aaa14ddcdf4aff1c8",
+    "documentMicroversion": "2f6245e59db1686c4a68911b",
+    "elementId": "d4e2a8111d1ad47847d11b0a",
+    "fullConfiguration": "default",
+    "id": "MZG9CqhNVpB3v5ANr",
+    "isStandardContent": false,
+    "name": "upper_arm_xl",
+    "partId": "JMD",
+    "suppressed": false,
+    "type": "Part"
+}
