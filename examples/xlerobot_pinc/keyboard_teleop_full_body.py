@@ -261,7 +261,7 @@ class SimpleTeleopArm:
                     use_latched_reference=False,
                 ),
                 EEBoundsAndSafety(
-                    end_effector_bounds={"min": [-1.0, -1.0, -1.0], "max": [1.0, 1.0, 1.0]},
+                    end_effector_bounds={"min": [-0.7, -0.7, -0.7], "max": [0.7, 0.7, 0.7]},
                     max_ee_step_m=0.03,
                 ),
                 GripperVelocityToJoint(
@@ -573,7 +573,7 @@ def move_to_target_full_body_with_ipol(
     
 
 def main():
-    robot_name = "ambient_xlerobot_pinc_xl"
+    robot_name = "ambient_xlerobot_pinc"
     try:
         robot_config = XLerobotPincConfig(
             id=robot_name,

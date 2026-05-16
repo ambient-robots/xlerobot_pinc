@@ -179,7 +179,7 @@ class SimpleTeleopArm:
                     use_latched_reference=False,
                 ),
                 EEBoundsAndSafety(
-                    end_effector_bounds={"min": [-0.5, -0.5, -0.5], "max": [0.5, 0.5, 0.5]},
+                    end_effector_bounds={"min": [-0.7, -0.7, -0.7], "max": [0.7, 0.7, 0.7]},
                     max_ee_step_m=0.05,
                 ),
                 GripperVelocityToJoint(
