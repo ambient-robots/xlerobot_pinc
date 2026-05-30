@@ -6,6 +6,7 @@ Adapted from the original vr_robot_teleop.py script.
 import asyncio
 import json
 import ssl
+import time
 import websockets
 import numpy as np
 import math
@@ -60,6 +61,10 @@ class VRWebSocketServer(BaseInputProvider):
         # Controller states
         self.left_controller = VRControllerState("left")
         self.right_controller = VRControllerState("right")
+        self._position_goal_rate_stats = {
+            "left": {"window_start": None, "last_time": None, "count": 0},
+            "right": {"window_start": None, "last_time": None, "count": 0},
+        }
     
     def setup_ssl(self) -> Optional[ssl.SSLContext]:
         """Setup SSL context for WebSocket server."""
@@ -155,6 +160,41 @@ class VRWebSocketServer(BaseInputProvider):
         
         if 'rightController' in data:
             await self.process_single_controller('right', data['rightController'])
+
+    def _reset_position_goal_rate(self, hand: str):
+        stats = self._position_goal_rate_stats.get(hand)
+        if stats is None:
+            return
+        stats["window_start"] = None
+        stats["last_time"] = None
+        stats["count"] = 0
+
+    def _note_position_control_goal(self, hand: str):
+        stats = self._position_goal_rate_stats.get(hand)
+        if stats is None:
+            return
+
+        now = time.perf_counter()
+        window_start = stats["window_start"]
+        last_time = stats["last_time"]
+
+        if window_start is None or last_time is None or now - last_time > 2.0:
+            stats["window_start"] = now
+            stats["last_time"] = now
+            stats["count"] = 0
+            return
+
+        stats["count"] += 1
+        elapsed = now - window_start
+        dt_ms = (now - last_time) * 1000.0
+
+        if elapsed >= 1.0:
+            hz = stats["count"] / elapsed
+            print(f"[XLeVR] {hand} POSITION_CONTROL goal rate: {hz:.1f} Hz, last dt={dt_ms:.1f} ms")
+            stats["window_start"] = now
+            stats["count"] = 0
+
+        stats["last_time"] = now
     
     async def process_single_controller(self, hand: str, data: Dict):
         """Process data for a single controller."""
@@ -172,6 +212,7 @@ class VRWebSocketServer(BaseInputProvider):
         else:
             if not controller.grip_active:
                 controller.grip_active = True
+                self._reset_position_goal_rate(hand)
 
                 # reset original position
                 controller.origin_position = np.array([position.get('x', 0), position.get('y', 0), position.get('z', 0)])
@@ -226,6 +267,7 @@ class VRWebSocketServer(BaseInputProvider):
                         "source": f"vr_relative_pose_{hand}",
                     }
                 )
+                self._note_position_control_goal(hand)
                 await self.send_goal(goal)
             
     
@@ -242,6 +284,7 @@ class VRWebSocketServer(BaseInputProvider):
         # or when button pressed
         if controller.grip_active:
             controller.reset_grip() 
+            self._reset_position_goal_rate(hand)
             # Send idle goal to stop arm control
             goal = ControlGoal(
                 arm=hand,
