@@ -151,10 +151,10 @@ class SimpleTeleopArm:
         self.dt = 1.0 / FPS
         fc_pos_hz = 10.0 # Hz
         fc_rot_hz = 15.0 # Hz
-        self.eps_pos = 1e-3 * self.dt  # 2.5 mm/s per axis -> m/tick per axis
-        self.eps_rot = 5e-3 * self.dt # 0.01 rad/s (about 0.6 deg/s) per axis -> rad/tick per axis
-        self.vr_stationary_pos = 4e-3 * self.dt  # 5 mm/s -> m/tick
-        self.vr_stationary_rot = 2e-2 * self.dt # 0.02 rad/s (about 1.2 deg/s) -> rad/tick
+        self.eps_pos = 1e-3 * self.dt  # Component-wise 1 mm/s -> m/tick
+        self.eps_rot = 5e-3 * self.dt  # Component-wise 0.005 rad/s (about 0.29 deg/s) -> rad/tick
+        self.vr_stationary_pos = 4e-3 * self.dt  # 4 mm/s -> m/tick
+        self.vr_stationary_rot = 2e-2 * self.dt  # 0.02 rad/s (about 1.1 deg/s) -> rad/tick
         alpha_pos = alpha_from_fc(fc_pos_hz, self.dt)
         alpha_rot = alpha_from_fc(fc_rot_hz, self.dt)
         alpha_pos = np.clip(alpha_pos, 0.0, 1.0)
@@ -329,7 +329,7 @@ class SimpleTeleopArm:
 
         ee_pose_changed = False
 
-        # deadzone on filtered deltas
+        # Component-wise deadzone on filtered deltas.
         pos = np.array([delta_x, delta_y, delta_z])
         rot = np.array([delta_wx, delta_wy, delta_wz])
         pos[np.abs(pos) < self.eps_pos] = 0.0
@@ -644,8 +644,8 @@ def main():
             obs = {**left_obs, **right_obs, **camera_obs}
 
             dt_s = time.perf_counter() - start
-            # dt_ms = dt_s * 1e3
-            # print(f"Control delay: {dt_ms:.1f}ms")
+            dt_ms = dt_s * 1e3
+            logger.debug(f"Control delay: {dt_ms:.1f}ms")
             precise_sleep(1 / FPS - dt_s)
         
     except Exception as e:
