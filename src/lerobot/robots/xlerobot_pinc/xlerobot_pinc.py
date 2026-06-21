@@ -32,6 +32,7 @@ from lerobot.motors.feetech import (
 
 from ..robot import Robot
 from ..utils import ensure_safe_goal_position
+from .calibration_utils import filter_calibration_for_motors, merge_calibrations
 from .config_xlerobot_pinc import XLerobotPincConfig
 
 logger = logging.getLogger(__name__)
@@ -57,26 +58,6 @@ class XLerobotPinc(Robot):
         ]
         self.base_speed_index = 0
         norm_mode_body = MotorNormMode.DEGREES if config.use_degrees else MotorNormMode.RANGE_M100_100
-        if self.calibration.get("left_arm_shoulder_pan") is not None:
-            calibration_left_base = {
-                "left_arm_shoulder_pan": self.calibration.get("left_arm_shoulder_pan"),
-                "left_arm_shoulder_lift": self.calibration.get("left_arm_shoulder_lift"),
-                "left_arm_elbow_flex": self.calibration.get("left_arm_elbow_flex"),
-                "left_arm_elbow_roll": self.calibration.get("left_arm_elbow_roll"),
-                "left_arm_wrist_flex": self.calibration.get("left_arm_wrist_flex"),
-                "left_arm_wrist_roll": self.calibration.get("left_arm_wrist_roll"),
-                "left_arm_gripper": self.calibration.get("left_arm_gripper"),
-            }
-            if self.has_mobile_platform:
-                calibration_left_base.update(
-                    {
-                        "base_left_wheel": self.calibration.get("base_left_wheel"),
-                        "base_back_wheel": self.calibration.get("base_back_wheel"),
-                        "base_right_wheel": self.calibration.get("base_right_wheel"),
-                    }
-                )
-        else:
-            calibration_left_base = self.calibration
 
         left_base_motors = {
             "left_arm_shoulder_pan": Motor(1, "sts3250", norm_mode_body),
@@ -95,42 +76,32 @@ class XLerobotPinc(Robot):
                     "base_right_wheel": Motor(10, "sts3215", MotorNormMode.RANGE_M100_100),
                 }
             )
+        calibration_left_base = filter_calibration_for_motors(self.calibration, left_base_motors)
 
         self.bus_left_base = FeetechMotorsBus(
             port=self.config.port_left_base,
             motors=left_base_motors,
             calibration=calibration_left_base,
         )
-        if self.calibration.get("right_arm_shoulder_pan") is not None:
-            calibration_right_head = {
-                "right_arm_shoulder_pan": self.calibration.get("right_arm_shoulder_pan"),
-                "right_arm_shoulder_lift": self.calibration.get("right_arm_shoulder_lift"),
-                "right_arm_elbow_flex": self.calibration.get("right_arm_elbow_flex"),
-                "right_arm_elbow_roll": self.calibration.get("right_arm_elbow_roll"),
-                "right_arm_wrist_flex": self.calibration.get("right_arm_wrist_flex"),
-                "right_arm_wrist_roll": self.calibration.get("right_arm_wrist_roll"),
-                "right_arm_gripper": self.calibration.get("right_arm_gripper"),
-                "head_pan": self.calibration.get("head_pan"),
-                "head_tilt": self.calibration.get("head_tilt"),
-            }
-        else:
-            calibration_right_head = self.calibration
-            
+
+        right_head_motors = {
+            # right arm
+            "right_arm_shoulder_pan": Motor(1, "sts3250", norm_mode_body),
+            "right_arm_shoulder_lift": Motor(2, "sts3250", norm_mode_body),
+            "right_arm_elbow_flex": Motor(3, "sts3250", norm_mode_body),
+            "right_arm_elbow_roll": Motor(4, "sts3215", norm_mode_body),
+            "right_arm_wrist_flex": Motor(5, "sts3215", norm_mode_body),
+            "right_arm_wrist_roll": Motor(6, "sts3215", norm_mode_body),
+            "right_arm_gripper": Motor(7, "sts3215", MotorNormMode.RANGE_0_100),
+            # head
+            "head_pan": Motor(8, "sts3215", norm_mode_body),
+            "head_tilt": Motor(9, "sts3215", norm_mode_body),
+        }
+        calibration_right_head = filter_calibration_for_motors(self.calibration, right_head_motors)
+
         self.bus_right_head = FeetechMotorsBus(
             port=self.config.port_right_head,
-            motors={
-                # right arm
-                "right_arm_shoulder_pan": Motor(1, "sts3250", norm_mode_body),
-                "right_arm_shoulder_lift": Motor(2, "sts3250", norm_mode_body),
-                "right_arm_elbow_flex": Motor(3, "sts3250", norm_mode_body),
-                "right_arm_elbow_roll": Motor(4, "sts3215", norm_mode_body),
-                "right_arm_wrist_flex": Motor(5, "sts3215", norm_mode_body),
-                "right_arm_wrist_roll": Motor(6, "sts3215", norm_mode_body),
-                "right_arm_gripper": Motor(7, "sts3215", MotorNormMode.RANGE_0_100),
-                # head
-                "head_pan": Motor(8, "sts3215", norm_mode_body),
-                "head_tilt": Motor(9, "sts3215", norm_mode_body),
-            },
+            motors=right_head_motors,
             calibration=calibration_right_head,
         )
         self.left_arm_motors = [motor for motor in self.bus_left_base.motors if motor.startswith("left_arm")]
@@ -252,9 +223,63 @@ class XLerobotPinc(Robot):
     def is_calibrated(self) -> bool:
         return self.bus_left_base.is_calibrated and self.bus_right_head.is_calibrated
 
-    def calibrate(self) -> None:
-        logger.info(f"\nRunning calibration of {self}")
-        ## calib right motors
+    @staticmethod
+    def _normalize_calibration_scope(scope: str) -> str:
+        normalized = scope.strip().lower()
+        scope_aliases = {
+            "": "all",
+            "a": "all",
+            "all": "all",
+            "r": "right_head",
+            "right_head": "right_head",
+            "l": "left_base",
+            "left_base": "left_base",
+        }
+        if normalized in scope_aliases:
+            return scope_aliases[normalized]
+        raise ValueError(
+            f"Invalid calibration scope {scope!r}. Use one of: all, right_head, left_base."
+        )
+
+    def _prompt_calibration_scope(self) -> str:
+        while True:
+            user_input = input(
+                "Select calibration scope: [a]ll, [r]ight_head, [l]eft_base "
+                "(press ENTER for all): "
+            )
+            try:
+                return self._normalize_calibration_scope(user_input)
+            except ValueError as exc:
+                print(exc)
+
+    def calibrate(self, scope: str | None = None) -> None:
+        selected_scope = (
+            self._prompt_calibration_scope()
+            if scope is None
+            else self._normalize_calibration_scope(scope)
+        )
+        logger.info(f"\nRunning {selected_scope} calibration of {self}")
+
+        if selected_scope in {"all", "right_head"}:
+            calibration_right_head = self._calibrate_right_head()
+            self.calibration = merge_calibrations(
+                self.calibration,
+                calibration_right_head,
+                self.bus_right_head.motors,
+            )
+
+        if selected_scope in {"all", "left_base"}:
+            calibration_left_base = self._calibrate_left_base()
+            self.calibration = merge_calibrations(
+                self.calibration,
+                calibration_left_base,
+                self.bus_left_base.motors,
+            )
+
+        self._save_calibration()
+        print(f"Calibration saved to {self.calibration_fpath}")
+
+    def _calibrate_right_head(self) -> dict[str, MotorCalibration]:
         right_motors = self.right_arm_motors + self.head_motors
         self.bus_right_head.disable_torque()
         for motor in right_motors:
@@ -290,8 +315,9 @@ class XLerobotPinc(Robot):
         calib_to_write = {k: v for k, v in calibration_right_head.items() if k != fixed_range_motor}
         self.bus_right_head.write_calibration(calib_to_write, cache=False)
         self.bus_right_head.calibration = calibration_right_head
-        
-        # calib left-side motors
+        return calibration_right_head
+
+    def _calibrate_left_base(self) -> dict[str, MotorCalibration]:
         self.bus_left_base.disable_torque(self.left_arm_motors)
         for motor in self.left_arm_motors:
             self.bus_left_base.write("Operating_Mode", motor, OperatingMode.POSITION.value)
@@ -333,10 +359,7 @@ class XLerobotPinc(Robot):
         calib_to_write = {k: v for k, v in calibration_left_base.items() if k != fixed_range_motor}
         self.bus_left_base.write_calibration(calib_to_write, cache=False)
         self.bus_left_base.calibration = calibration_left_base
-
-        self.calibration = {**calibration_left_base, **calibration_right_head}
-        self._save_calibration()
-        print(f"Calibration saved to {self.calibration_fpath}")
+        return calibration_left_base
         
 
     def configure(self):

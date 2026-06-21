@@ -238,6 +238,33 @@ robot.setup_motors()
 </details>
 
 <details>
+<summary id="calibrate-motor-buses">Calibrate motor buses</summary>
+
+`XLerobotPinc` can calibrate both motor buses or just one bus when only part of the robot needs recalibration:
+
+```python
+from lerobot.robots.xlerobot_pinc import XLerobotPinc, XLerobotPincConfig
+
+config = XLerobotPincConfig(
+    id="ambient_xlerobot_pinc",
+    has_mobile_platform=True,
+    use_degrees=True
+)
+robot = XLerobotPinc(config)
+robot.bus_left_base.connect()
+robot.bus_right_head.connect()
+
+robot.calibrate()              # Interactive choice; ENTER defaults to all motors.
+robot.calibrate("right_head")  # Right arm + pan-tilt head on bus_right_head.
+robot.calibrate("left_base")   # Left arm + optional mobile base on bus_left_base.
+robot.calibrate("all")         # Both buses.
+```
+
+Partial calibration preserves the saved calibration entries for the bus you did not recalibrate.
+
+</details>
+
+<details>
 <summary id="user-runtime-config">User runtime config</summary>
 
 Create your local config from the template:
